@@ -27,6 +27,18 @@ public sealed class SnapshotServiceTests : IDisposable
     }
 
     [Fact]
+    public void SaveSnapshot_UsesClockOffsetWithoutConvertingToMachineLocalTime()
+    {
+        var fixedTime = new DateTimeOffset(2026, 1, 2, 3, 4, 5, TimeSpan.FromHours(13));
+        var service = new SnapshotService(() => fixedTime);
+        var frame = CreateFrame();
+
+        var path = service.SaveSnapshot(frame, _tempRoot);
+
+        Assert.EndsWith("microscope-20260102-030405.png", path);
+    }
+
+    [Fact]
     public void SaveSnapshot_WhenConfiguredFolderIsInvalid_FallsBackToTempFolder()
     {
         var service = new SnapshotService();

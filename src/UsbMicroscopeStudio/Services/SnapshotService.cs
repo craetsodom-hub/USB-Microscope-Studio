@@ -32,7 +32,7 @@ public sealed class SnapshotService : ISnapshotService
         encoder.Frames.Add(BitmapFrame.Create(frame));
 
         var resolvedSnapshotDirectory = ResolveSnapshotDirectory(snapshotDirectory);
-        var timestamp = _clock().LocalDateTime.ToString("yyyyMMdd-HHmmss");
+        var timestamp = _clock().ToString("yyyyMMdd-HHmmss");
 
         for (var attempt = 0; attempt < 1000; attempt++)
         {
