@@ -68,11 +68,14 @@ public sealed class InspectionOverlayControl : FrameworkElement
     private InspectionPoint? _dragStart;
     private Guid? _selectedAnnotationId;
     private bool _isMovingSelection;
+    private UIElement? _inputHost;
 
     public InspectionOverlayControl()
     {
         Focusable = true;
         ClipToBounds = true;
+        Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
         MouseDown += OnMouseDown;
         MouseMove += OnMouseMove;
         MouseUp += OnMouseUp;
@@ -133,6 +136,34 @@ public sealed class InspectionOverlayControl : FrameworkElement
         set => SetValue(CaptureHistoryCommandProperty, value);
     }
 
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        AttachInputHost(Parent as UIElement);
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        AttachInputHost(null);
+    }
+
+    private void AttachInputHost(UIElement? inputHost)
+    {
+        if (_inputHost is not null)
+        {
+            _inputHost.RemoveHandler(PreviewMouseDownEvent, new MouseButtonEventHandler(OnInputHostPreviewMouseDown));
+            _inputHost.RemoveHandler(PreviewMouseMoveEvent, new MouseEventHandler(OnInputHostPreviewMouseMove));
+            _inputHost.RemoveHandler(PreviewMouseUpEvent, new MouseButtonEventHandler(OnInputHostPreviewMouseUp));
+        }
+
+        _inputHost = inputHost;
+        if (_inputHost is not null)
+        {
+            _inputHost.AddHandler(PreviewMouseDownEvent, new MouseButtonEventHandler(OnInputHostPreviewMouseDown), true);
+            _inputHost.AddHandler(PreviewMouseMoveEvent, new MouseEventHandler(OnInputHostPreviewMouseMove), true);
+            _inputHost.AddHandler(PreviewMouseUpEvent, new MouseButtonEventHandler(OnInputHostPreviewMouseUp), true);
+        }
+    }
+
     private static void OnAnnotationsChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
     {
         var control = (InspectionOverlayControl)dependencyObject;
@@ -155,10 +186,19 @@ public sealed class InspectionOverlayControl : FrameworkElement
     protected override void OnRender(DrawingContext drawingContext)
     {
         base.OnRender(drawingContext);
+        drawingContext.DrawRectangle(Brushes.Transparent, null, new Rect(RenderSize));
         DrawGrid(drawingContext);
         DrawRulers(drawingContext);
         DrawCrosshair(drawingContext);
         DrawAnnotations(drawingContext);
+    }
+
+    protected override HitTestResult? HitTestCore(PointHitTestParameters hitTestParameters)
+    {
+        var bounds = new Rect(RenderSize);
+        return bounds.Contains(hitTestParameters.HitPoint)
+            ? new PointHitTestResult(this, hitTestParameters.HitPoint)
+            : null;
     }
 
     private void OnMouseDown(object sender, MouseButtonEventArgs e)
@@ -226,6 +266,42 @@ public sealed class InspectionOverlayControl : FrameworkElement
         Annotations?.Add(_activeAnnotation);
         CaptureMouse();
         InvalidateVisual();
+    }
+
+    private void OnInputHostPreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (!IsInsideOverlay(e.GetPosition(this)))
+        {
+            return;
+        }
+
+        OnMouseDown(this, e);
+        e.Handled = true;
+    }
+
+    private void OnInputHostPreviewMouseMove(object sender, MouseEventArgs e)
+    {
+        if (!IsMouseCaptured && !IsInsideOverlay(e.GetPosition(this)))
+        {
+            return;
+        }
+
+        OnMouseMove(this, e);
+        if (e.LeftButton == MouseButtonState.Pressed)
+        {
+            e.Handled = true;
+        }
+    }
+
+    private void OnInputHostPreviewMouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (!IsMouseCaptured && !IsInsideOverlay(e.GetPosition(this)))
+        {
+            return;
+        }
+
+        OnMouseUp(this, e);
+        e.Handled = true;
     }
 
     private void OnMouseMove(object sender, MouseEventArgs e)
@@ -575,6 +651,12 @@ public sealed class InspectionOverlayControl : FrameworkElement
     }
 
     private static Rect RectFrom(Point a, Point b) => new(a, b);
+
+    private bool IsInsideOverlay(Point point) =>
+        point.X >= 0 &&
+        point.Y >= 0 &&
+        point.X <= ActualWidth &&
+        point.Y <= ActualHeight;
 
     private InspectionPoint ToInspectionPoint(Point point) => InspectionGeometry.FromViewport(point, ActualWidth, ActualHeight);
 

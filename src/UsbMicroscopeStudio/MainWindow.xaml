@@ -144,8 +144,9 @@
                     </Viewbox.RenderTransform>
                     <Viewbox.RenderTransformOrigin>0.5,0.5</Viewbox.RenderTransformOrigin>
                     <Grid Width="{Binding PreviewWidth}" Height="{Binding PreviewHeight}">
-                        <Image Source="{Binding PreviewFrame}" Stretch="None" RenderOptions.BitmapScalingMode="HighQuality" AutomationProperties.AutomationId="LivePreviewImage" />
+                        <Image Source="{Binding PreviewFrame}" Stretch="None" IsHitTestVisible="False" RenderOptions.BitmapScalingMode="HighQuality" AutomationProperties.AutomationId="LivePreviewImage" />
                         <controls:InspectionOverlayControl
+                            Panel.ZIndex="1"
                             Width="{Binding PreviewWidth}"
                             Height="{Binding PreviewHeight}"
                             Annotations="{Binding Annotations}"
