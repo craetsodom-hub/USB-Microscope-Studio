@@ -1,8 +1,8 @@
 # Product
 
-## Phase 1 Goal
+## Phase 2 Goal
 
-Build a reliable technician-focused Windows app for USB/UVC microscope inspection. The first release is centered on live viewing and still capture only.
+Build a reliable technician-focused Windows app for USB/UVC microscope inspection. Phase 2 adds non-destructive inspection overlays, annotations, calibration, and measurement workflows on top of the Phase 1 live preview foundation.
 
 ## Included
 
@@ -15,12 +15,19 @@ Build a reliable technician-focused Windows app for USB/UVC microscope inspectio
 - Reconnect loop for unplug/reconnect scenarios without crashing.
 - Demo Mode with a synthetic microscope feed for development and QA without hardware.
 - Automation IDs for future UI automation.
+- Phase 2 inspection overlay with crosshair, configurable grid, and rulers.
+- Non-destructive annotations: line, arrow, rectangle, circle, freehand, text, reference line, distance, and angle.
+- Annotation selection, move, delete, undo, redo, clear-all, stroke thickness, and technician-safe color palette.
+- Calibration profiles by camera, resolution, and profile name.
+- Millimetre and micrometre measurement support, with explicit uncalibrated status when no profile is active.
+- Freeze & Inspect mode plus clean-frame, annotated-frame, and JSON sidecar save workflows.
 
-## Excluded From Phase 1
+## Excluded From Phase 2
 
 - Recording.
-- Measurement/calibration tools.
+- PDF reports.
 - Payments.
+- Licensing.
 - Microsoft Store packaging.
 
 ## Primary User

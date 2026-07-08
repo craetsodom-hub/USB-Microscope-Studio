@@ -31,6 +31,17 @@
 - `IAppSettingsStore`: persisted app preferences, currently the snapshot folder path.
 - `IFolderPickerService`: UI shell abstraction for selecting snapshot folders.
 - `IUiDispatcher`: UI-thread abstraction for testability.
+- `InspectionOverlayControl`: vector overlay renderer and lightweight annotation interaction layer over the preview frame.
+- `CalibrationCalculator`: pixel distance, angle, and calibrated real-world measurement calculations.
+- `JsonCalibrationProfileStore`: persisted calibration profiles by camera, resolution, and profile name.
+- `AnnotationHistory`: undo/redo snapshots for non-destructive annotation edits.
+- `AnnotationSerializer`: JSON sidecar save/load for editable inspections.
+
+## Phase 2 Inspection Model
+
+Annotations are stored separately from the camera frame as `InspectionAnnotation` records. Clean snapshots, rendered annotated PNGs, and JSON sidecars are separate artifacts so the camera frame remains non-destructive and inspection data can be reopened later.
+
+Calibration profiles are not global. They include camera id, selected resolution/FPS, profile name, units, and units-per-pixel. Measurements report pixel length at all times, but real-world length is only populated when a calibration profile is selected.
 
 ## Reconnect Strategy
 

@@ -25,6 +25,11 @@ Covered by unit tests:
 - Invalid snapshot folders fall back to a temp snapshot folder.
 - JSON settings persist snapshot folder path between launches.
 - Zoom clamps to the supported range.
+- Calibration profile calculations and real-world measurement gating.
+- Calibration profile JSON persistence.
+- Coordinate transformations for mirror and rotation.
+- Annotation undo/redo snapshots.
+- Annotation and measurement JSON sidecar serialization.
 
 ## Manual Test Plan
 
@@ -38,6 +43,10 @@ Covered by unit tests:
 8. Choose a snapshot folder and confirm the selected path is displayed.
 9. Capture a snapshot and confirm a PNG is saved in the selected folder.
 10. Relaunch and confirm the selected snapshot folder is restored.
+11. Enable crosshair, grid, and rulers and confirm the overlay remains aligned while zooming, rotating, mirroring, changing format, and entering fullscreen.
+12. Draw each annotation type and confirm select, move, delete, undo, redo, and clear-all work.
+13. Confirm measurements show `Uncalibrated` until a calibration profile is created from a reference line.
+14. Save clean frame, annotated frame, and JSON sidecar and confirm each file is created.
 
 To force Demo Mode on machines that have a webcam attached:
 
@@ -48,4 +57,4 @@ dotnet run --project src/UsbMicroscopeStudio/UsbMicroscopeStudio.csproj
 
 ## Phase 1 Constraints
 
-Recording, measurement, payments, and Store packaging are intentionally not tested because they are not part of Phase 1.
+Recording, PDF reports, payments, licensing, and Store packaging are intentionally not tested because they are not part of Phase 2.

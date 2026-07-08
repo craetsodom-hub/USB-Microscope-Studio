@@ -1,6 +1,9 @@
 using System.ComponentModel;
+using System.IO;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using UsbMicroscopeStudio.Services;
 using UsbMicroscopeStudio.ViewModels;
 
@@ -59,5 +62,19 @@ public partial class MainWindow : Window
         {
             _viewModel.IsFullscreen = false;
         }
+    }
+
+    private void SaveAnnotatedFrame_Click(object sender, RoutedEventArgs e)
+    {
+        Directory.CreateDirectory(_viewModel.SnapshotFolderPath);
+        var path = Path.Combine(_viewModel.SnapshotFolderPath, $"annotated-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.png");
+        var bitmap = new RenderTargetBitmap((int)Math.Max(1, PreviewHost.ActualWidth), (int)Math.Max(1, PreviewHost.ActualHeight), 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(PreviewHost);
+
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using var stream = File.Create(path);
+        encoder.Save(stream);
+        _viewModel.SaveInspectionSidecarForAnnotatedFrame(path);
     }
 }
