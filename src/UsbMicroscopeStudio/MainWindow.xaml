@@ -64,6 +64,10 @@
                             <Button Content="Fullscreen" Command="{Binding ToggleFullscreenCommand}" AutomationProperties.AutomationId="RailFullscreenButton" />
                         </UniformGrid>
 
+                        <TextBlock Text="Snapshot folder" FontSize="13" FontWeight="SemiBold" Margin="0,6,0,8" />
+                        <Button Content="Choose folder" Command="{Binding ChooseSnapshotFolderCommand}" AutomationProperties.AutomationId="ChooseSnapshotFolderButton" />
+                        <TextBlock Text="{Binding SnapshotFolderPath}" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" Margin="0,2,0,14" AutomationProperties.AutomationId="SnapshotFolderPathText" />
+
                         <TextBlock Text="View" FontSize="13" FontWeight="SemiBold" Margin="0,6,0,8" />
                         <UniformGrid Columns="3" Margin="0,0,0,10">
                             <Button Content="-" Command="{Binding ZoomOutCommand}" AutomationProperties.AutomationId="ZoomOutButton" />

@@ -20,6 +20,8 @@ public partial class MainWindow : Window
             new DirectShowCameraCatalog(),
             new OpenCvCameraPreviewService(),
             new SnapshotService(),
+            new JsonAppSettingsStore(),
+            new WpfFolderPickerService(),
             new WpfUiDispatcher());
 
         DataContext = _viewModel;

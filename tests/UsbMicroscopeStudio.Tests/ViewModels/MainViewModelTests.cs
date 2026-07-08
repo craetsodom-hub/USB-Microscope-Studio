@@ -109,7 +109,8 @@ public sealed class MainViewModelTests
     {
         var preview = new FakePreviewService();
         var snapshots = new FakeSnapshotService();
-        using var viewModel = CreateViewModel(previewService: preview, snapshotService: snapshots);
+        var settings = new FakeSettingsStore(new AppSettings("C:\\SelectedSnapshots"));
+        using var viewModel = CreateViewModel(previewService: preview, snapshotService: snapshots, settingsStore: settings);
         var frame = CreateFrame();
 
         preview.PublishFrame(frame);
@@ -117,6 +118,31 @@ public sealed class MainViewModelTests
 
         Assert.Equal("C:\\Snapshots\\frame.png", viewModel.LastSnapshotPath);
         Assert.Same(frame, snapshots.SavedFrame);
+        Assert.Equal("C:\\SelectedSnapshots", snapshots.SavedFolder);
+    }
+
+    [Fact]
+    public void Constructor_LoadsPersistedSnapshotFolder()
+    {
+        var settings = new FakeSettingsStore(new AppSettings("D:\\Bench Captures"));
+
+        using var viewModel = CreateViewModel(settingsStore: settings);
+
+        Assert.Equal("D:\\Bench Captures", viewModel.SnapshotFolderPath);
+    }
+
+    [Fact]
+    public void ChooseSnapshotFolder_PersistsSelectedFolder()
+    {
+        var settings = new FakeSettingsStore(new AppSettings("C:\\Old"));
+        var picker = new FakeFolderPicker("C:\\New");
+        using var viewModel = CreateViewModel(settingsStore: settings, folderPicker: picker);
+
+        viewModel.ChooseSnapshotFolder();
+
+        Assert.Equal("C:\\New", viewModel.SnapshotFolderPath);
+        Assert.Equal("C:\\New", settings.SavedSettings?.SnapshotFolderPath);
+        Assert.Equal("C:\\Old", picker.InitialDirectory);
     }
 
     [Fact]
@@ -142,12 +168,16 @@ public sealed class MainViewModelTests
     private static MainViewModel CreateViewModel(
         FakeCameraCatalog? catalog = null,
         FakePreviewService? previewService = null,
-        FakeSnapshotService? snapshotService = null)
+        FakeSnapshotService? snapshotService = null,
+        FakeSettingsStore? settingsStore = null,
+        FakeFolderPicker? folderPicker = null)
     {
         return new MainViewModel(
             catalog ?? new FakeCameraCatalog([new CameraDevice("demo://microscope", "Demo", -1, true)], [new CameraFormat(640, 480, 30)]),
             previewService ?? new FakePreviewService(),
             snapshotService ?? new FakeSnapshotService(),
+            settingsStore ?? new FakeSettingsStore(new AppSettings(null)),
+            folderPicker ?? new FakeFolderPicker(null),
             new ImmediateDispatcher());
     }
 
@@ -227,10 +257,35 @@ public sealed class MainViewModelTests
     {
         public BitmapSource? SavedFrame { get; private set; }
 
-        public string SaveSnapshot(BitmapSource frame)
+        public string? SavedFolder { get; private set; }
+
+        public string DefaultSnapshotDirectory => "C:\\DefaultSnapshots";
+
+        public string SaveSnapshot(BitmapSource frame, string snapshotDirectory)
         {
             SavedFrame = frame;
+            SavedFolder = snapshotDirectory;
             return "C:\\Snapshots\\frame.png";
+        }
+    }
+
+    private sealed class FakeSettingsStore(AppSettings loadedSettings) : IAppSettingsStore
+    {
+        public AppSettings? SavedSettings { get; private set; }
+
+        public AppSettings Load() => loadedSettings;
+
+        public void Save(AppSettings settings) => SavedSettings = settings;
+    }
+
+    private sealed class FakeFolderPicker(string? selectedFolder) : IFolderPickerService
+    {
+        public string? InitialDirectory { get; private set; }
+
+        public string? PickFolder(string initialDirectory)
+        {
+            InitialDirectory = initialDirectory;
+            return selectedFolder;
         }
     }
 

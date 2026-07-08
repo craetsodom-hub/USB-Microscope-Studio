@@ -12,6 +12,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly ICameraCatalog _cameraCatalog;
     private readonly ICameraPreviewService _previewService;
     private readonly ISnapshotService _snapshotService;
+    private readonly IAppSettingsStore _settingsStore;
+    private readonly IFolderPickerService _folderPickerService;
     private readonly IUiDispatcher _uiDispatcher;
     private readonly SemaphoreSlim _previewGate = new(1, 1);
     private int _formatLoadRequestId;
@@ -22,15 +24,24 @@ public partial class MainViewModel : ObservableObject, IDisposable
         ICameraCatalog cameraCatalog,
         ICameraPreviewService previewService,
         ISnapshotService snapshotService,
+        IAppSettingsStore settingsStore,
+        IFolderPickerService folderPickerService,
         IUiDispatcher uiDispatcher)
     {
         _cameraCatalog = cameraCatalog;
         _previewService = previewService;
         _snapshotService = snapshotService;
+        _settingsStore = settingsStore;
+        _folderPickerService = folderPickerService;
         _uiDispatcher = uiDispatcher;
 
         _previewService.FrameReady += OnFrameReady;
         _previewService.StatusChanged += OnStatusChanged;
+
+        var settings = _settingsStore.Load();
+        snapshotFolderPath = string.IsNullOrWhiteSpace(settings.SnapshotFolderPath)
+            ? _snapshotService.DefaultSnapshotDirectory
+            : settings.SnapshotFolderPath;
     }
 
     public ObservableCollection<CameraDevice> Cameras { get; } = [];
@@ -54,6 +65,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private string? lastSnapshotPath;
+
+    [ObservableProperty]
+    private string snapshotFolderPath = string.Empty;
 
     [ObservableProperty]
     private double currentFps;
@@ -97,6 +111,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
     partial void OnIsMirroredChanged(bool value) => UpdatePreviewTransforms();
 
     partial void OnRotationDegreesChanged(int value) => UpdatePreviewTransforms();
+
+    partial void OnSnapshotFolderPathChanged(string value)
+    {
+        _settingsStore.Save(new AppSettings(value));
+    }
 
     [RelayCommand]
     public async Task RefreshCamerasAsync()
@@ -184,7 +203,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         try
         {
-            LastSnapshotPath = _snapshotService.SaveSnapshot(PreviewFrame);
+            LastSnapshotPath = _snapshotService.SaveSnapshot(PreviewFrame, SnapshotFolderPath);
             StatusMessage = $"Snapshot saved: {LastSnapshotPath}";
         }
         catch (Exception ex)
@@ -221,6 +240,19 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     [RelayCommand]
     public void ToggleFullscreen() => IsFullscreen = !IsFullscreen;
+
+    [RelayCommand]
+    public void ChooseSnapshotFolder()
+    {
+        var selectedFolder = _folderPickerService.PickFolder(SnapshotFolderPath);
+        if (string.IsNullOrWhiteSpace(selectedFolder))
+        {
+            return;
+        }
+
+        SnapshotFolderPath = selectedFolder;
+        StatusMessage = $"Snapshot folder: {SnapshotFolderPath}";
+    }
 
     public void Dispose()
     {

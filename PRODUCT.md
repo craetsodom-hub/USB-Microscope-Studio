@@ -10,7 +10,7 @@ Build a reliable technician-focused Windows app for USB/UVC microscope inspectio
 - Select camera source.
 - Select advertised or fallback resolution/FPS formats.
 - Smooth live preview backed by OpenCV.
-- Snapshot to the user's Pictures folder.
+- Snapshot to a user-selected folder, with the selected path persisted between launches.
 - Zoom, rotate, mirror, freeze, and fullscreen controls.
 - Reconnect loop for unplug/reconnect scenarios without crashing.
 - Demo Mode with a synthetic microscope feed for development and QA without hardware.

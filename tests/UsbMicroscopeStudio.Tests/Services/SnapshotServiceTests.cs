@@ -13,11 +13,11 @@ public sealed class SnapshotServiceTests : IDisposable
     public void SaveSnapshot_WhenFilenameCollides_CreatesUniqueFile()
     {
         var fixedTime = new DateTimeOffset(2026, 7, 8, 18, 45, 0, TimeSpan.FromHours(2));
-        var service = new SnapshotService(() => _tempRoot, () => fixedTime);
+        var service = new SnapshotService(() => fixedTime);
         var frame = CreateFrame();
 
-        var first = service.SaveSnapshot(frame);
-        var second = service.SaveSnapshot(frame);
+        var first = service.SaveSnapshot(frame, _tempRoot);
+        var second = service.SaveSnapshot(frame, _tempRoot);
 
         Assert.NotEqual(first, second);
         Assert.EndsWith("microscope-20260708-184500.png", first);
@@ -29,13 +29,21 @@ public sealed class SnapshotServiceTests : IDisposable
     [Fact]
     public void SaveSnapshot_WhenConfiguredFolderIsInvalid_FallsBackToTempFolder()
     {
-        var service = new SnapshotService(() => "C:\\invalid\0snapshot-folder");
+        var service = new SnapshotService();
         var frame = CreateFrame();
 
-        var savedPath = service.SaveSnapshot(frame);
+        var savedPath = service.SaveSnapshot(frame, "C:\\invalid\0snapshot-folder");
 
         Assert.True(File.Exists(savedPath));
         Assert.StartsWith(Path.Combine(Path.GetTempPath(), "USB Microscope Studio", "Snapshots"), savedPath);
+    }
+
+    [Fact]
+    public void DefaultSnapshotDirectory_UsesPicturesSnapshotFolder()
+    {
+        var service = new SnapshotService();
+
+        Assert.EndsWith(Path.Combine("USB Microscope Studio", "Snapshots"), service.DefaultSnapshotDirectory);
     }
 
     public void Dispose()

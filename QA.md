@@ -5,8 +5,9 @@
 Run:
 
 ```powershell
-dotnet build UsbMicroscopeStudio.slnx
-dotnet test UsbMicroscopeStudio.slnx
+dotnet restore tests/UsbMicroscopeStudio.Tests/UsbMicroscopeStudio.Tests.csproj --runtime win-x64 -p:Platform=x64
+dotnet build tests/UsbMicroscopeStudio.Tests/UsbMicroscopeStudio.Tests.csproj --configuration Release --runtime win-x64 -p:Platform=x64 --no-restore
+dotnet test tests/UsbMicroscopeStudio.Tests/UsbMicroscopeStudio.Tests.csproj --configuration Release --runtime win-x64 -p:Platform=x64 --no-build
 ```
 
 Covered by unit tests:
@@ -19,8 +20,10 @@ Covered by unit tests:
 - Freeze preserves the last displayed frame.
 - Rotate and mirror update preview transforms.
 - Snapshot saves the current frame.
+- Snapshot folder selection loads, persists, and is used for captures.
 - Snapshot filename collisions create unique PNG files.
 - Invalid snapshot folders fall back to a temp snapshot folder.
+- JSON settings persist snapshot folder path between launches.
 - Zoom clamps to the supported range.
 
 ## Manual Test Plan
@@ -32,7 +35,9 @@ Covered by unit tests:
 5. Start preview and exercise zoom, rotate, mirror, freeze, and fullscreen.
 6. Unplug the camera during preview and confirm the app reports reconnect status without crashing.
 7. Reconnect the camera and confirm preview resumes.
-8. Capture a snapshot and confirm a PNG is saved under Pictures.
+8. Choose a snapshot folder and confirm the selected path is displayed.
+9. Capture a snapshot and confirm a PNG is saved in the selected folder.
+10. Relaunch and confirm the selected snapshot folder is restored.
 
 To force Demo Mode on machines that have a webcam attached:
 

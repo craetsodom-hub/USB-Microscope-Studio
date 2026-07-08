@@ -20,13 +20,16 @@
 4. `OpenCvCameraPreviewService` starts a background preview loop.
 5. Frames are converted to frozen `BitmapSource` instances and marshalled to the UI.
 6. Camera read failures transition to reconnect polling instead of throwing through the UI.
-7. `SnapshotService` persists the current preview frame as PNG.
+7. `JsonAppSettingsStore` loads the persisted snapshot folder from the user's roaming app data.
+8. `SnapshotService` persists the current preview frame as PNG in the selected folder, with collision-safe filenames and temp-folder fallback.
 
 ## Key Boundaries
 
 - `ICameraCatalog`: camera and format discovery.
 - `ICameraPreviewService`: live frame lifecycle and transforms.
 - `ISnapshotService`: still image persistence.
+- `IAppSettingsStore`: persisted app preferences, currently the snapshot folder path.
+- `IFolderPickerService`: UI shell abstraction for selecting snapshot folders.
 - `IUiDispatcher`: UI-thread abstraction for testability.
 
 ## Reconnect Strategy

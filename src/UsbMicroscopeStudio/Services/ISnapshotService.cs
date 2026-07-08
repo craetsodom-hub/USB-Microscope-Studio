@@ -4,5 +4,7 @@ namespace UsbMicroscopeStudio.Services;
 
 public interface ISnapshotService
 {
-    string SaveSnapshot(BitmapSource frame);
+    string DefaultSnapshotDirectory { get; }
+
+    string SaveSnapshot(BitmapSource frame, string snapshotDirectory);
 }
