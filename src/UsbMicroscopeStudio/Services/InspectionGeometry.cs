@@ -19,6 +19,29 @@ public static class InspectionGeometry
 
     public static InspectionPoint MirrorHorizontal(InspectionPoint point) => new(Clamp01(1d - point.X), Clamp01(point.Y));
 
+    public static InspectionPoint ApplyPreviewTransform(InspectionPoint point, bool mirrorHorizontal, int rotationDegrees)
+    {
+        var transformed = mirrorHorizontal ? MirrorHorizontal(point) : point;
+        return RotateClockwise(transformed, rotationDegrees);
+    }
+
+    public static InspectionPoint RemovePreviewTransform(InspectionPoint point, bool mirrorHorizontal, int rotationDegrees)
+    {
+        var transformed = RotateClockwise(point, 360 - NormalizeRotation(rotationDegrees));
+        return mirrorHorizontal ? MirrorHorizontal(transformed) : transformed;
+    }
+
+    public static InspectionPoint TransformBetweenPreviewTransforms(
+        InspectionPoint point,
+        bool oldMirrorHorizontal,
+        int oldRotationDegrees,
+        bool newMirrorHorizontal,
+        int newRotationDegrees)
+    {
+        var rawPoint = RemovePreviewTransform(point, oldMirrorHorizontal, oldRotationDegrees);
+        return ApplyPreviewTransform(rawPoint, newMirrorHorizontal, newRotationDegrees);
+    }
+
     public static InspectionPoint RotateClockwise(InspectionPoint point, int degrees)
     {
         return NormalizeRotation(degrees) switch

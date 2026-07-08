@@ -105,24 +105,90 @@ public sealed class MainViewModelTests
         Assert.True(preview.TransformOptions.MirrorHorizontal);
     }
 
+    [Theory]
+    [InlineData(90, 0.7, 0.2)]
+    [InlineData(180, 0.8, 0.7)]
+    [InlineData(270, 0.3, 0.8)]
+    public void AnnotationCoordinatesFollowRotationOnly(int rotationDegrees, double expectedX, double expectedY)
+    {
+        using var viewModel = CreateViewModel();
+        AddSinglePointAnnotation(viewModel);
+
+        viewModel.RotationDegrees = rotationDegrees;
+
+        AssertPoint(new InspectionPoint(expectedX, expectedY), viewModel.Annotations[0].Points[0]);
+    }
+
     [Fact]
-    public async Task AnnotationCoordinatesRemainAttachedAcrossTransformAndResolutionChanges()
+    public void AnnotationCoordinatesFollowMirrorOnly()
+    {
+        using var viewModel = CreateViewModel();
+        AddSinglePointAnnotation(viewModel);
+
+        viewModel.ToggleMirror();
+
+        AssertPoint(new InspectionPoint(0.8, 0.3), viewModel.Annotations[0].Points[0]);
+    }
+
+    [Fact]
+    public void AnnotationCoordinatesFollowRotateThenMirrorUsingPreviewOrder()
+    {
+        using var viewModel = CreateViewModel();
+        AddSinglePointAnnotation(viewModel);
+
+        viewModel.RotateRight();
+        viewModel.ToggleMirror();
+
+        AssertPoint(new InspectionPoint(0.7, 0.8), viewModel.Annotations[0].Points[0]);
+    }
+
+    [Fact]
+    public void AnnotationCoordinatesFollowMirrorThenRotateUsingPreviewOrder()
+    {
+        using var viewModel = CreateViewModel();
+        AddSinglePointAnnotation(viewModel);
+
+        viewModel.ToggleMirror();
+        viewModel.RotateRight();
+
+        AssertPoint(new InspectionPoint(0.7, 0.8), viewModel.Annotations[0].Points[0]);
+    }
+
+    [Fact]
+    public void AnnotationCoordinatesResetFromMirroredAndRotatedBackToNormal()
+    {
+        using var viewModel = CreateViewModel();
+        AddSinglePointAnnotation(viewModel);
+
+        viewModel.RotateRight();
+        viewModel.ToggleMirror();
+        viewModel.ResetView();
+
+        AssertPoint(new InspectionPoint(0.2, 0.3), viewModel.Annotations[0].Points[0]);
+    }
+
+    [Fact]
+    public async Task FrozenFrameDefersAnnotationTransformUntilNewFrameIsDisplayed()
     {
         var preview = new FakePreviewService();
         using var viewModel = CreateViewModel(previewService: preview);
         await viewModel.RefreshCamerasAsync();
-        viewModel.Annotations.Add(new InspectionAnnotation
-        {
-            Tool = InspectionTool.Line,
-            Points = [new(0.2, 0.4), new(0.8, 0.4)]
-        });
+        preview.PublishFrame(CreateFrame(640, 480));
+        AddSinglePointAnnotation(viewModel);
 
+        viewModel.IsFrozen = true;
         viewModel.RotateRight();
         viewModel.ToggleMirror();
         preview.PublishFrame(CreateFrame(1280, 720));
 
-        Assert.Equal(new InspectionPoint(0.4, 0.2), viewModel.Annotations[0].Points[0]);
-        Assert.Equal(new InspectionPoint(0.4, 0.8), viewModel.Annotations[0].Points[1]);
+        AssertPoint(new InspectionPoint(0.2, 0.3), viewModel.Annotations[0].Points[0]);
+        Assert.Equal(640, viewModel.PreviewWidth);
+        Assert.Equal(480, viewModel.PreviewHeight);
+
+        viewModel.IsFrozen = false;
+        preview.PublishFrame(CreateFrame(1280, 720));
+
+        AssertPoint(new InspectionPoint(0.7, 0.8), viewModel.Annotations[0].Points[0]);
         Assert.Equal(1280, viewModel.PreviewWidth);
         Assert.Equal(720, viewModel.PreviewHeight);
     }
@@ -216,6 +282,42 @@ public sealed class MainViewModelTests
     }
 
     [Fact]
+    public void SaveInspectionSidecarAfterCleanFrameRestoresCleanFramePath()
+    {
+        var tempDirectory = Path.Combine(Path.GetTempPath(), "UsbMicroscopeStudioSidecarTests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDirectory);
+        try
+        {
+            var preview = new FakePreviewService();
+            var snapshotService = new SnapshotService(() => new DateTimeOffset(2026, 7, 9, 12, 0, 0, TimeSpan.Zero));
+            using var viewModel = CreateViewModel(
+                previewService: preview,
+                snapshotService: snapshotService,
+                settingsStore: new FakeSettingsStore(new AppSettings(tempDirectory)));
+            preview.PublishFrame(CreateFrame(4, 3));
+
+            viewModel.SaveCleanFrame();
+            viewModel.SaveInspectionSidecar();
+
+            var sidecarPath = Directory.GetFiles(tempDirectory, "inspection-*.json").Single();
+            var document = new AnnotationSerializer().Load(sidecarPath);
+            Assert.Equal(viewModel.LastSnapshotPath, document.CleanFramePath);
+            Assert.Null(document.AnnotatedFramePath);
+
+            using var reopened = CreateViewModel(settingsStore: new FakeSettingsStore(new AppSettings(tempDirectory)));
+            reopened.OpenInspection(sidecarPath);
+
+            Assert.Equal(viewModel.LastSnapshotPath, reopened.LastSnapshotPath);
+            Assert.Equal(4, reopened.PreviewFrame?.PixelWidth);
+            Assert.Equal(3, reopened.PreviewFrame?.PixelHeight);
+        }
+        finally
+        {
+            Directory.Delete(tempDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
     public void AnnotationHistoryUpdatesUndoRedoCommandState()
     {
         using var viewModel = CreateViewModel();
@@ -295,7 +397,7 @@ public sealed class MainViewModelTests
     private static MainViewModel CreateViewModel(
         FakeCameraCatalog? catalog = null,
         FakePreviewService? previewService = null,
-        FakeSnapshotService? snapshotService = null,
+        ISnapshotService? snapshotService = null,
         FakeSettingsStore? settingsStore = null,
         FakeFolderPicker? folderPicker = null,
         FakeCalibrationProfileStore? calibrationProfileStore = null)
@@ -324,6 +426,21 @@ public sealed class MainViewModelTests
         encoder.Frames.Add(BitmapFrame.Create(frame));
         using var stream = File.Create(path);
         encoder.Save(stream);
+    }
+
+    private static void AddSinglePointAnnotation(MainViewModel viewModel)
+    {
+        viewModel.Annotations.Add(new InspectionAnnotation
+        {
+            Tool = InspectionTool.Line,
+            Points = [new InspectionPoint(0.2, 0.3)]
+        });
+    }
+
+    private static void AssertPoint(InspectionPoint expected, InspectionPoint actual)
+    {
+        Assert.Equal(expected.X, actual.X, precision: 6);
+        Assert.Equal(expected.Y, actual.Y, precision: 6);
     }
 
     private sealed class FakeCameraCatalog : ICameraCatalog

@@ -30,12 +30,13 @@ Covered by unit tests:
 - Mismatched calibration profiles are cleared and cannot drive real-world measurements.
 - Calibration profile JSON persistence.
 - Coordinate transformations for mirror and rotation.
-- Integration coverage for annotation coordinates across mirror, rotation, and resolution changes.
+- Integration coverage for annotation coordinates across 90/180/270 rotation, mirror, rotate-then-mirror, mirror-then-rotate, reset, and frozen-frame transform behavior.
 - Three-point angle calculations.
 - Annotation undo/redo snapshots.
 - Undo/redo command-state updates.
 - Annotation and measurement JSON sidecar serialization, including text annotations.
 - Open-inspection restore of clean frame, annotations, and matching calibration.
+- Direct Save JSON sidecars preserve the clean-frame path and can reopen the saved clean frame.
 - Native-dimension annotated PNG rendering that excludes viewport letterboxing and UI zoom.
 
 ## Manual Test Plan

@@ -223,14 +223,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     partial void OnIsMirroredChanged(bool value)
     {
-        TransformAnnotationsForFrameTransform();
         UpdatePreviewTransforms();
+        SyncAnnotationsToDisplayedFrameTransform();
     }
 
     partial void OnRotationDegreesChanged(int value)
     {
-        TransformAnnotationsForFrameTransform();
         UpdatePreviewTransforms();
+        SyncAnnotationsToDisplayedFrameTransform();
     }
 
     partial void OnSnapshotFolderPathChanged(string value)
@@ -505,7 +505,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public void SaveInspectionSidecar()
     {
         var sidecarPath = Path.Combine(SnapshotFolderPath, $"inspection-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.json");
-        var document = CreateInspectionDocument(null, LastSnapshotPath);
+        var document = CreateInspectionDocument(LastSnapshotPath, null);
         _annotationSerializer.Save(sidecarPath, document);
         StatusMessage = $"Inspection sidecar saved: {sidecarPath}";
     }
@@ -605,6 +605,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             CurrentFps = e.FramesPerSecond;
             if (!IsFrozen)
             {
+                SyncAnnotationsToDisplayedFrameTransform();
                 PreviewFrame = e.Frame;
                 PreviewWidth = e.Frame.PixelWidth;
                 PreviewHeight = e.Frame.PixelHeight;
@@ -631,21 +632,27 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _previewService.TransformOptions = new FrameTransformOptions(IsMirrored, RotationDegrees);
     }
 
-    private void TransformAnnotationsForFrameTransform()
+    private void SyncAnnotationsToDisplayedFrameTransform()
     {
-        var rotationDelta = NormalizeRotation(RotationDegrees - _annotationRotationDegrees);
+        if (IsFrozen)
+        {
+            return;
+        }
+
+        var rotationChanged = NormalizeRotation(RotationDegrees) != NormalizeRotation(_annotationRotationDegrees);
         var mirrorChanged = IsMirrored != _annotationMirrored;
-        if (Annotations.Count > 0 && (rotationDelta != 0 || mirrorChanged))
+        if (Annotations.Count > 0 && (rotationChanged || mirrorChanged))
         {
             _annotationHistory.Capture(Annotations);
             for (var i = 0; i < Annotations.Count; i++)
             {
                 var transformedPoints = Annotations[i].Points
-                    .Select(point =>
-                    {
-                        var transformed = InspectionGeometry.RotateClockwise(point, rotationDelta);
-                        return mirrorChanged ? InspectionGeometry.MirrorHorizontal(transformed) : transformed;
-                    })
+                    .Select(point => InspectionGeometry.TransformBetweenPreviewTransforms(
+                        point,
+                        _annotationMirrored,
+                        _annotationRotationDegrees,
+                        IsMirrored,
+                        RotationDegrees))
                     .ToList();
                 Annotations[i] = Annotations[i] with { Points = transformedPoints };
             }
@@ -653,7 +660,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             UpdateAnnotationCommandState();
         }
 
-        _annotationRotationDegrees = RotationDegrees;
+        _annotationRotationDegrees = NormalizeRotation(RotationDegrees);
         _annotationMirrored = IsMirrored;
         UpdateMeasurementStatus();
     }
