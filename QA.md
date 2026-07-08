@@ -25,6 +25,19 @@ Covered by unit tests:
 - Invalid snapshot folders fall back to a temp snapshot folder.
 - JSON settings persist snapshot folder path between launches.
 - Zoom clamps to the supported range.
+- Calibration profile calculations and real-world measurement gating.
+- Calibration profiles are filtered by the active camera id and resolution/FPS.
+- Mismatched calibration profiles are cleared and cannot drive real-world measurements.
+- Calibration profile JSON persistence.
+- Coordinate transformations for mirror and rotation.
+- Integration coverage for annotation coordinates across 90/180/270 rotation, mirror, rotate-then-mirror, mirror-then-rotate, reset, and frozen-frame transform behavior.
+- Three-point angle calculations.
+- Annotation undo/redo snapshots.
+- Undo/redo command-state updates.
+- Annotation and measurement JSON sidecar serialization, including text annotations.
+- Open-inspection restore of clean frame, annotations, and matching calibration.
+- Direct Save JSON sidecars preserve the clean-frame path and can reopen the saved clean frame.
+- Native-dimension annotated PNG rendering that excludes viewport letterboxing and UI zoom.
 
 ## Manual Test Plan
 
@@ -38,6 +51,14 @@ Covered by unit tests:
 8. Choose a snapshot folder and confirm the selected path is displayed.
 9. Capture a snapshot and confirm a PNG is saved in the selected folder.
 10. Relaunch and confirm the selected snapshot folder is restored.
+11. Enable crosshair, grid, and rulers and confirm the overlay remains aligned while zooming, rotating, mirroring, changing format, and entering fullscreen.
+12. Draw each annotation type and confirm select, move, delete, undo, redo, and clear-all work.
+13. Create and edit a text annotation and confirm the entered text is preserved.
+14. Draw an angle using endpoint, vertex, endpoint and confirm both rays, arc, and degree label render.
+15. Confirm measurements show `Uncalibrated` until a matching calibration profile is created from a reference line.
+16. Switch camera or format and confirm mismatched calibration profiles disappear and measurements return to `Uncalibrated`.
+17. Save clean frame, annotated frame, and JSON sidecar and confirm each file is created.
+18. Open the JSON sidecar and confirm the clean frame, annotations, measurements, and valid calibration profile are restored for editing.
 
 To force Demo Mode on machines that have a webcam attached:
 
@@ -48,4 +69,4 @@ dotnet run --project src/UsbMicroscopeStudio/UsbMicroscopeStudio.csproj
 
 ## Phase 1 Constraints
 
-Recording, measurement, payments, and Store packaging are intentionally not tested because they are not part of Phase 1.
+Recording, PDF reports, payments, licensing, and Store packaging are intentionally not tested because they are not part of Phase 2.
