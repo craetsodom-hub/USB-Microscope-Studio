@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using UsbMicroscopeStudio.Models.Inspection;
+using UsbMicroscopeStudio.Services;
 
 namespace UsbMicroscopeStudio.Controls;
 
@@ -66,6 +67,7 @@ public sealed class InspectionOverlayControl : FrameworkElement
     private InspectionAnnotation? _activeAnnotation;
     private InspectionPoint? _dragStart;
     private Guid? _selectedAnnotationId;
+    private bool _isMovingSelection;
 
     public InspectionOverlayControl()
     {
@@ -168,6 +170,46 @@ public sealed class InspectionOverlayControl : FrameworkElement
         if (CurrentTool == InspectionTool.Select)
         {
             _selectedAnnotationId = HitTest(point);
+            if (_selectedAnnotationId is not null && e.ClickCount == 2)
+            {
+                EditSelectedTextAnnotation();
+                return;
+            }
+
+            if (_selectedAnnotationId is not null)
+            {
+                CaptureHistoryCommand?.Execute(null);
+                _isMovingSelection = true;
+                CaptureMouse();
+            }
+
+            return;
+        }
+
+        if (CurrentTool == InspectionTool.Text)
+        {
+            var text = PromptForText(null);
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return;
+            }
+
+            CaptureHistoryCommand?.Execute(null);
+            Annotations?.Add(new InspectionAnnotation
+            {
+                Tool = CurrentTool,
+                StrokeColor = StrokeColor,
+                StrokeThickness = Math.Max(1, StrokeThickness),
+                Text = text,
+                Points = [point]
+            });
+            InvalidateVisual();
+            return;
+        }
+
+        if (CurrentTool == InspectionTool.Angle)
+        {
+            HandleAngleClick(point);
             return;
         }
 
@@ -177,7 +219,6 @@ public sealed class InspectionOverlayControl : FrameworkElement
             Tool = CurrentTool,
             StrokeColor = StrokeColor,
             StrokeThickness = Math.Max(1, StrokeThickness),
-            Text = CurrentTool == InspectionTool.Text ? "Note" : null,
             IsMeasurement = CurrentTool is InspectionTool.ReferenceLine or InspectionTool.Distance or InspectionTool.Angle,
             Points = [point, point]
         };
@@ -196,7 +237,7 @@ public sealed class InspectionOverlayControl : FrameworkElement
             return;
         }
 
-        if (CurrentTool == InspectionTool.Select && _selectedAnnotationId is not null && _dragStart is not null)
+        if (CurrentTool == InspectionTool.Select && _isMovingSelection && _selectedAnnotationId is not null && _dragStart is not null)
         {
             var annotation = Annotations?.FirstOrDefault(item => item.Id == _selectedAnnotationId);
             if (annotation is null)
@@ -204,12 +245,11 @@ public sealed class InspectionOverlayControl : FrameworkElement
                 return;
             }
 
-            CaptureHistoryCommand?.Execute(null);
             var dx = point.X - _dragStart.Value.X;
             var dy = point.Y - _dragStart.Value.Y;
             ReplaceAnnotation(annotation with
             {
-                Points = annotation.Points.Select(p => new InspectionPoint(p.X + dx, p.Y + dy)).ToList()
+                Points = annotation.Points.Select(p => InspectionGeometry.Translate(p, dx, dy)).ToList()
             });
             _dragStart = point;
             InvalidateVisual();
@@ -232,8 +272,13 @@ public sealed class InspectionOverlayControl : FrameworkElement
 
     private void OnMouseUp(object sender, MouseButtonEventArgs e)
     {
-        _activeAnnotation = null;
+        if (_activeAnnotation?.Tool != InspectionTool.Angle)
+        {
+            _activeAnnotation = null;
+        }
+
         _dragStart = null;
+        _isMovingSelection = false;
         ReleaseMouseCapture();
     }
 
@@ -335,7 +380,7 @@ public sealed class InspectionOverlayControl : FrameworkElement
 
         var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(annotation.StrokeColor));
         var pen = new Pen(brush, annotation.StrokeThickness);
-        var points = annotation.Points.Select(point => new Point(point.X, point.Y)).ToList();
+        var points = annotation.Points.Select(point => InspectionGeometry.ToViewport(point, ActualWidth, ActualHeight)).ToList();
 
         switch (annotation.Tool)
         {
@@ -354,8 +399,11 @@ public sealed class InspectionOverlayControl : FrameworkElement
                 break;
             case InspectionTool.Text:
                 drawingContext.DrawText(
-                    new FormattedText(annotation.Text ?? "Note", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), 18, brush, 1),
+                    new FormattedText(annotation.Text ?? string.Empty, System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), 18, brush, VisualTreeHelper.GetDpi(this).PixelsPerDip),
                     points[0]);
+                break;
+            case InspectionTool.Angle:
+                DrawAngle(drawingContext, pen, brush, points);
                 break;
             default:
                 if (points.Count > 1)
@@ -377,6 +425,108 @@ public sealed class InspectionOverlayControl : FrameworkElement
         }
     }
 
+    private void HandleAngleClick(InspectionPoint point)
+    {
+        if (_activeAnnotation is null || _activeAnnotation.Tool != InspectionTool.Angle || _activeAnnotation.Points.Count >= 3)
+        {
+            CaptureHistoryCommand?.Execute(null);
+            _activeAnnotation = new InspectionAnnotation
+            {
+                Tool = InspectionTool.Angle,
+                StrokeColor = StrokeColor,
+                StrokeThickness = Math.Max(1, StrokeThickness),
+                IsMeasurement = true,
+                Points = [point]
+            };
+            Annotations?.Add(_activeAnnotation);
+            InvalidateVisual();
+            return;
+        }
+
+        _activeAnnotation = _activeAnnotation with { Points = [.. _activeAnnotation.Points, point] };
+        ReplaceAnnotation(_activeAnnotation);
+        if (_activeAnnotation.Points.Count >= 3)
+        {
+            _activeAnnotation = null;
+        }
+
+        InvalidateVisual();
+    }
+
+    private void DrawAngle(DrawingContext drawingContext, Pen pen, Brush brush, IReadOnlyList<Point> points)
+    {
+        if (points.Count == 1)
+        {
+            drawingContext.DrawEllipse(brush, null, points[0], 3, 3);
+            return;
+        }
+
+        if (points.Count == 2)
+        {
+            drawingContext.DrawLine(pen, points[0], points[1]);
+            return;
+        }
+
+        var first = points[0];
+        var vertex = points[1];
+        var second = points[2];
+        drawingContext.DrawLine(pen, vertex, first);
+        drawingContext.DrawLine(pen, vertex, second);
+        DrawAngleArc(drawingContext, pen, brush, first, vertex, second);
+    }
+
+    private void DrawAngleArc(DrawingContext drawingContext, Pen pen, Brush brush, Point first, Point vertex, Point second)
+    {
+        var startAngle = Math.Atan2(first.Y - vertex.Y, first.X - vertex.X);
+        var endAngle = Math.Atan2(second.Y - vertex.Y, second.X - vertex.X);
+        var sweep = NormalizeSweep(endAngle - startAngle);
+        var radius = Math.Min(42, Math.Min((first - vertex).Length, (second - vertex).Length) * 0.35);
+        radius = Math.Max(16, radius);
+
+        var start = new Point(vertex.X + Math.Cos(startAngle) * radius, vertex.Y + Math.Sin(startAngle) * radius);
+        var end = new Point(vertex.X + Math.Cos(startAngle + sweep) * radius, vertex.Y + Math.Sin(startAngle + sweep) * radius);
+        var geometry = new StreamGeometry();
+        using (var context = geometry.Open())
+        {
+            context.BeginFigure(start, false, false);
+            context.ArcTo(end, new Size(radius, radius), 0, sweep > Math.PI, SweepDirection.Clockwise, true, false);
+        }
+
+        geometry.Freeze();
+        drawingContext.DrawGeometry(null, pen, geometry);
+
+        var labelAngle = startAngle + (sweep / 2);
+        var labelPoint = new Point(vertex.X + Math.Cos(labelAngle) * (radius + 14), vertex.Y + Math.Sin(labelAngle) * (radius + 14));
+        var angleDegrees = Math.Abs(sweep * 180d / Math.PI);
+        drawingContext.DrawText(
+            new FormattedText($"{angleDegrees:0.#} deg", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI Semibold"), 14, brush, VisualTreeHelper.GetDpi(this).PixelsPerDip),
+            labelPoint);
+    }
+
+    private void EditSelectedTextAnnotation()
+    {
+        if (Annotations is null || _selectedAnnotationId is null)
+        {
+            return;
+        }
+
+        var annotation = Annotations.FirstOrDefault(item => item.Id == _selectedAnnotationId && item.Tool == InspectionTool.Text);
+        if (annotation is null)
+        {
+            return;
+        }
+
+        var text = PromptForText(annotation.Text);
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return;
+        }
+
+        CaptureHistoryCommand?.Execute(null);
+        ReplaceAnnotation(annotation with { Text = text });
+        InvalidateVisual();
+    }
+
     private void DrawArrowHead(DrawingContext drawingContext, Pen pen, Point start, Point end)
     {
         var angle = Math.Atan2(end.Y - start.Y, end.X - start.X);
@@ -389,8 +539,9 @@ public sealed class InspectionOverlayControl : FrameworkElement
 
     private Guid? HitTest(InspectionPoint point)
     {
+        var viewportPoint = InspectionGeometry.ToViewport(point, ActualWidth, ActualHeight);
         return Annotations?
-            .LastOrDefault(annotation => BoundsFor(annotation).Contains(new Point(point.X, point.Y)))
+            .LastOrDefault(annotation => BoundsFor(annotation).Contains(viewportPoint))
             ?.Id;
     }
 
@@ -415,16 +566,68 @@ public sealed class InspectionOverlayControl : FrameworkElement
             return Rect.Empty;
         }
 
-        var minX = annotation.Points.Min(point => point.X);
-        var minY = annotation.Points.Min(point => point.Y);
-        var maxX = annotation.Points.Max(point => point.X);
-        var maxY = annotation.Points.Max(point => point.Y);
+        var points = annotation.Points.Select(point => InspectionGeometry.ToViewport(point, ActualWidth, ActualHeight)).ToList();
+        var minX = points.Min(point => point.X);
+        var minY = points.Min(point => point.Y);
+        var maxX = points.Max(point => point.X);
+        var maxY = points.Max(point => point.Y);
         return new Rect(new Point(minX - 8, minY - 8), new Point(maxX + 8, maxY + 8));
     }
 
     private static Rect RectFrom(Point a, Point b) => new(a, b);
 
-    private InspectionPoint ToInspectionPoint(Point point) => new(
-        Math.Clamp(point.X, 0, ActualWidth),
-        Math.Clamp(point.Y, 0, ActualHeight));
+    private InspectionPoint ToInspectionPoint(Point point) => InspectionGeometry.FromViewport(point, ActualWidth, ActualHeight);
+
+    private string? PromptForText(string? initialValue)
+    {
+        var textBox = new TextBox
+        {
+            Text = initialValue ?? string.Empty,
+            MinWidth = 280,
+            Margin = new Thickness(0, 0, 0, 12),
+            AcceptsReturn = true,
+            MinLines = 2,
+            MaxLines = 4
+        };
+        textBox.SelectAll();
+
+        var okButton = new Button { Content = "OK", Width = 76, IsDefault = true, Margin = new Thickness(0, 0, 8, 0) };
+        var cancelButton = new Button { Content = "Cancel", Width = 76, IsCancel = true };
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+        buttons.Children.Add(okButton);
+        buttons.Children.Add(cancelButton);
+
+        var panel = new StackPanel { Margin = new Thickness(16) };
+        panel.Children.Add(new TextBlock { Text = "Text annotation", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 8) });
+        panel.Children.Add(textBox);
+        panel.Children.Add(buttons);
+
+        var window = new Window
+        {
+            Title = "Text annotation",
+            Content = panel,
+            Owner = Window.GetWindow(this),
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            ResizeMode = ResizeMode.NoResize,
+            SizeToContent = SizeToContent.WidthAndHeight
+        };
+        okButton.Click += (_, _) => window.DialogResult = true;
+        var result = window.ShowDialog();
+        return result == true ? textBox.Text.Trim() : null;
+    }
+
+    private static double NormalizeSweep(double sweep)
+    {
+        while (sweep < 0)
+        {
+            sweep += Math.PI * 2;
+        }
+
+        while (sweep > Math.PI * 2)
+        {
+            sweep -= Math.PI * 2;
+        }
+
+        return sweep > Math.PI ? Math.PI * 2 - sweep : sweep;
+    }
 }

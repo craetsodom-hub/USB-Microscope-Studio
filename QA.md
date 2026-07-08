@@ -26,10 +26,17 @@ Covered by unit tests:
 - JSON settings persist snapshot folder path between launches.
 - Zoom clamps to the supported range.
 - Calibration profile calculations and real-world measurement gating.
+- Calibration profiles are filtered by the active camera id and resolution/FPS.
+- Mismatched calibration profiles are cleared and cannot drive real-world measurements.
 - Calibration profile JSON persistence.
 - Coordinate transformations for mirror and rotation.
+- Integration coverage for annotation coordinates across mirror, rotation, and resolution changes.
+- Three-point angle calculations.
 - Annotation undo/redo snapshots.
-- Annotation and measurement JSON sidecar serialization.
+- Undo/redo command-state updates.
+- Annotation and measurement JSON sidecar serialization, including text annotations.
+- Open-inspection restore of clean frame, annotations, and matching calibration.
+- Native-dimension annotated PNG rendering that excludes viewport letterboxing and UI zoom.
 
 ## Manual Test Plan
 
@@ -45,8 +52,12 @@ Covered by unit tests:
 10. Relaunch and confirm the selected snapshot folder is restored.
 11. Enable crosshair, grid, and rulers and confirm the overlay remains aligned while zooming, rotating, mirroring, changing format, and entering fullscreen.
 12. Draw each annotation type and confirm select, move, delete, undo, redo, and clear-all work.
-13. Confirm measurements show `Uncalibrated` until a calibration profile is created from a reference line.
-14. Save clean frame, annotated frame, and JSON sidecar and confirm each file is created.
+13. Create and edit a text annotation and confirm the entered text is preserved.
+14. Draw an angle using endpoint, vertex, endpoint and confirm both rays, arc, and degree label render.
+15. Confirm measurements show `Uncalibrated` until a matching calibration profile is created from a reference line.
+16. Switch camera or format and confirm mismatched calibration profiles disappear and measurements return to `Uncalibrated`.
+17. Save clean frame, annotated frame, and JSON sidecar and confirm each file is created.
+18. Open the JSON sidecar and confirm the clean frame, annotations, measurements, and valid calibration profile are restored for editing.
 
 To force Demo Mode on machines that have a webcam attached:
 

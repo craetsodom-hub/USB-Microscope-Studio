@@ -2,8 +2,9 @@ using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Microsoft.Win32;
+using UsbMicroscopeStudio.Models.Inspection;
 using UsbMicroscopeStudio.Services;
 using UsbMicroscopeStudio.ViewModels;
 
@@ -13,6 +14,7 @@ public partial class MainWindow : Window
 {
     private readonly MainViewModel _viewModel;
     private readonly WindowFullscreenStateController _fullscreenStateController;
+    private readonly InspectionFrameRenderer _inspectionFrameRenderer = new();
 
     public MainWindow()
     {
@@ -66,15 +68,58 @@ public partial class MainWindow : Window
 
     private void SaveAnnotatedFrame_Click(object sender, RoutedEventArgs e)
     {
+        if (_viewModel.PreviewFrame is null)
+        {
+            _viewModel.StatusMessage = "No frame is available to save.";
+            return;
+        }
+
         Directory.CreateDirectory(_viewModel.SnapshotFolderPath);
-        var path = Path.Combine(_viewModel.SnapshotFolderPath, $"annotated-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.png");
-        var bitmap = new RenderTargetBitmap((int)Math.Max(1, PreviewHost.ActualWidth), (int)Math.Max(1, PreviewHost.ActualHeight), 96, 96, PixelFormats.Pbgra32);
-        bitmap.Render(PreviewHost);
+        var path = GetAvailablePath(Path.Combine(_viewModel.SnapshotFolderPath, $"annotated-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.png"));
+        var bitmap = _inspectionFrameRenderer.RenderAnnotatedFrame(
+            _viewModel.PreviewFrame,
+            _viewModel.Annotations.ToList(),
+            new OverlayOptions(_viewModel.ShowCrosshair, _viewModel.ShowGrid, _viewModel.GridSpacingPixels, _viewModel.ShowRulers));
 
         var encoder = new PngBitmapEncoder();
         encoder.Frames.Add(BitmapFrame.Create(bitmap));
         using var stream = File.Create(path);
         encoder.Save(stream);
         _viewModel.SaveInspectionSidecarForAnnotatedFrame(path);
+    }
+
+    private void OpenInspection_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "Open inspection",
+            Filter = "Inspection sidecar (*.json)|*.json|All files (*.*)|*.*",
+            InitialDirectory = Directory.Exists(_viewModel.SnapshotFolderPath) ? _viewModel.SnapshotFolderPath : Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)
+        };
+
+        if (dialog.ShowDialog(this) == true)
+        {
+            _viewModel.OpenInspection(dialog.FileName);
+        }
+    }
+
+    private static string GetAvailablePath(string path)
+    {
+        if (!File.Exists(path))
+        {
+            return path;
+        }
+
+        var directory = Path.GetDirectoryName(path) ?? string.Empty;
+        var name = Path.GetFileNameWithoutExtension(path);
+        var extension = Path.GetExtension(path);
+        for (var index = 1; ; index++)
+        {
+            var candidate = Path.Combine(directory, $"{name}-{index}{extension}");
+            if (!File.Exists(candidate))
+            {
+                return candidate;
+            }
+        }
     }
 }

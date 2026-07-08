@@ -1,5 +1,6 @@
 using System.Windows.Media.Imaging;
 using UsbMicroscopeStudio.Models;
+using UsbMicroscopeStudio.Models.Inspection;
 using UsbMicroscopeStudio.Services;
 using UsbMicroscopeStudio.ViewModels;
 
@@ -105,6 +106,132 @@ public sealed class MainViewModelTests
     }
 
     [Fact]
+    public async Task AnnotationCoordinatesRemainAttachedAcrossTransformAndResolutionChanges()
+    {
+        var preview = new FakePreviewService();
+        using var viewModel = CreateViewModel(previewService: preview);
+        await viewModel.RefreshCamerasAsync();
+        viewModel.Annotations.Add(new InspectionAnnotation
+        {
+            Tool = InspectionTool.Line,
+            Points = [new(0.2, 0.4), new(0.8, 0.4)]
+        });
+
+        viewModel.RotateRight();
+        viewModel.ToggleMirror();
+        preview.PublishFrame(CreateFrame(1280, 720));
+
+        Assert.Equal(new InspectionPoint(0.4, 0.2), viewModel.Annotations[0].Points[0]);
+        Assert.Equal(new InspectionPoint(0.4, 0.8), viewModel.Annotations[0].Points[1]);
+        Assert.Equal(1280, viewModel.PreviewWidth);
+        Assert.Equal(720, viewModel.PreviewHeight);
+    }
+
+    [Fact]
+    public async Task CalibrationProfilesAreFilteredByCurrentCameraAndFormat()
+    {
+        var camera = new CameraDevice("usb://camera-a", "Camera A", 0);
+        var formatA = new CameraFormat(640, 480, 30);
+        var formatB = new CameraFormat(1280, 720, 30);
+        var matching = new CalibrationProfile { Name = "640", CameraId = camera.Id, Format = formatA, UnitsPerPixel = 0.1 };
+        var otherResolution = new CalibrationProfile { Name = "1280", CameraId = camera.Id, Format = formatB, UnitsPerPixel = 0.2 };
+        var otherCamera = new CalibrationProfile { Name = "Other", CameraId = "usb://camera-b", Format = formatA, UnitsPerPixel = 0.3 };
+        using var viewModel = CreateViewModel(
+            catalog: new FakeCameraCatalog([camera], [formatA, formatB]),
+            calibrationProfileStore: new FakeCalibrationProfileStore([matching, otherResolution, otherCamera]));
+
+        await viewModel.RefreshCamerasAsync();
+        viewModel.SelectedCalibrationProfile = matching;
+        viewModel.SelectedFormat = formatB;
+
+        Assert.Single(viewModel.VisibleCalibrationProfiles);
+        Assert.Equal(otherResolution, viewModel.VisibleCalibrationProfiles[0]);
+        Assert.Null(viewModel.SelectedCalibrationProfile);
+        Assert.Equal("Uncalibrated", viewModel.CalibrationStatus);
+    }
+
+    [Fact]
+    public async Task MeasurementDoesNotUseMismatchedCalibrationProfile()
+    {
+        var camera = new CameraDevice("usb://camera-a", "Camera A", 0);
+        var selectedFormat = new CameraFormat(640, 480, 30);
+        var wrongFormat = new CameraFormat(1280, 720, 30);
+        var mismatched = new CalibrationProfile { Name = "Wrong", CameraId = camera.Id, Format = wrongFormat, UnitsPerPixel = 0.1 };
+        using var viewModel = CreateViewModel(catalog: new FakeCameraCatalog([camera], [selectedFormat]));
+
+        await viewModel.RefreshCamerasAsync();
+        viewModel.SelectedCalibrationProfile = mismatched;
+        viewModel.Annotations.Add(new InspectionAnnotation
+        {
+            Tool = InspectionTool.Distance,
+            IsMeasurement = true,
+            Points = [new(0, 0), new(1, 0)]
+        });
+
+        Assert.Null(viewModel.SelectedCalibrationProfile);
+        Assert.Equal("Uncalibrated", viewModel.MeasurementStatus);
+    }
+
+    [Fact]
+    public async Task OpenInspectionRestoresFrameAnnotationsAndMatchingCalibration()
+    {
+        var tempDirectory = Path.Combine(Path.GetTempPath(), "UsbMicroscopeStudioOpenInspectionTests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDirectory);
+        try
+        {
+            var camera = new CameraDevice("usb://camera-a", "Camera A", 0);
+            var format = new CameraFormat(4, 3, 30);
+            var cleanPath = Path.Combine(tempDirectory, "clean.png");
+            SavePng(CreateFrame(4, 3), cleanPath);
+            var profile = new CalibrationProfile { Name = "Bench", CameraId = camera.Id, Format = format, UnitsPerPixel = 0.05 };
+            var sidecarPath = Path.Combine(tempDirectory, "inspection.json");
+            new AnnotationSerializer().Save(sidecarPath, new InspectionDocument
+            {
+                CleanFramePath = cleanPath,
+                CalibrationProfile = profile,
+                Annotations =
+                [
+                    new InspectionAnnotation
+                    {
+                        Tool = InspectionTool.Text,
+                        Text = "Socket A",
+                        Points = [new(0.25, 0.5)]
+                    }
+                ]
+            });
+            using var viewModel = CreateViewModel(catalog: new FakeCameraCatalog([camera], [format]));
+
+            await viewModel.RefreshCamerasAsync();
+            viewModel.OpenInspection(sidecarPath);
+
+            Assert.Equal(4, viewModel.PreviewFrame?.PixelWidth);
+            Assert.Single(viewModel.Annotations);
+            Assert.Equal("Socket A", viewModel.Annotations[0].Text);
+            Assert.Equal(profile.ProfileKey, viewModel.SelectedCalibrationProfile?.ProfileKey);
+        }
+        finally
+        {
+            Directory.Delete(tempDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void AnnotationHistoryUpdatesUndoRedoCommandState()
+    {
+        using var viewModel = CreateViewModel();
+
+        viewModel.CaptureAnnotationHistory();
+        viewModel.Annotations.Add(new InspectionAnnotation { Tool = InspectionTool.Line, Points = [new(0, 0), new(1, 1)] });
+        Assert.True(viewModel.UndoAnnotationsCommand.CanExecute(null));
+
+        viewModel.UndoAnnotations();
+
+        Assert.Empty(viewModel.Annotations);
+        Assert.False(viewModel.UndoAnnotationsCommand.CanExecute(null));
+        Assert.True(viewModel.RedoAnnotationsCommand.CanExecute(null));
+    }
+
+    [Fact]
     public void SnapshotSavesCurrentFrame()
     {
         var preview = new FakePreviewService();
@@ -170,7 +297,8 @@ public sealed class MainViewModelTests
         FakePreviewService? previewService = null,
         FakeSnapshotService? snapshotService = null,
         FakeSettingsStore? settingsStore = null,
-        FakeFolderPicker? folderPicker = null)
+        FakeFolderPicker? folderPicker = null,
+        FakeCalibrationProfileStore? calibrationProfileStore = null)
     {
         return new MainViewModel(
             catalog ?? new FakeCameraCatalog([new CameraDevice("demo://microscope", "Demo", -1, true)], [new CameraFormat(640, 480, 30)]),
@@ -178,15 +306,24 @@ public sealed class MainViewModelTests
             snapshotService ?? new FakeSnapshotService(),
             settingsStore ?? new FakeSettingsStore(new AppSettings(null)),
             folderPicker ?? new FakeFolderPicker(null),
-            new ImmediateDispatcher());
+            new ImmediateDispatcher(),
+            calibrationProfileStore);
     }
 
-    private static BitmapSource CreateFrame()
+    private static BitmapSource CreateFrame(int width = 1, int height = 1)
     {
-        var pixels = new byte[] { 10, 20, 30, 255 };
-        var bitmap = BitmapSource.Create(1, 1, 96, 96, System.Windows.Media.PixelFormats.Bgra32, null, pixels, 4);
+        var pixels = Enumerable.Repeat<byte>(255, width * height * 4).ToArray();
+        var bitmap = BitmapSource.Create(width, height, 96, 96, System.Windows.Media.PixelFormats.Bgra32, null, pixels, width * 4);
         bitmap.Freeze();
         return bitmap;
+    }
+
+    private static void SavePng(BitmapSource frame, string path)
+    {
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(frame));
+        using var stream = File.Create(path);
+        encoder.Save(stream);
     }
 
     private sealed class FakeCameraCatalog : ICameraCatalog
@@ -292,5 +429,14 @@ public sealed class MainViewModelTests
     private sealed class ImmediateDispatcher : IUiDispatcher
     {
         public void Invoke(Action action) => action();
+    }
+
+    private sealed class FakeCalibrationProfileStore(IReadOnlyList<CalibrationProfile> profiles) : ICalibrationProfileStore
+    {
+        public IReadOnlyList<CalibrationProfile>? SavedProfiles { get; private set; }
+
+        public IReadOnlyList<CalibrationProfile> Load() => profiles;
+
+        public void Save(IReadOnlyList<CalibrationProfile> savedProfiles) => SavedProfiles = savedProfiles.ToList();
     }
 }

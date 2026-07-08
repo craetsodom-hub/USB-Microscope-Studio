@@ -108,7 +108,7 @@
 
                         <TextBlock Text="Calibration" FontSize="13" FontWeight="SemiBold" />
                         <TextBlock Text="{Binding CalibrationStatus}" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" Margin="0,2,0,8" AutomationProperties.AutomationId="CalibrationStatusText" />
-                        <ComboBox ItemsSource="{Binding CalibrationProfiles}" SelectedItem="{Binding SelectedCalibrationProfile}" DisplayMemberPath="Name" AutomationProperties.AutomationId="CalibrationProfileSelector" />
+                        <ComboBox ItemsSource="{Binding VisibleCalibrationProfiles}" SelectedItem="{Binding SelectedCalibrationProfile}" DisplayMemberPath="Name" AutomationProperties.AutomationId="CalibrationProfileSelector" />
                         <TextBox Text="{Binding CalibrationProfileName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8" AutomationProperties.AutomationId="CalibrationProfileNameTextBox" />
                         <TextBox Text="{Binding KnownCalibrationLength, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8" AutomationProperties.AutomationId="KnownCalibrationLengthTextBox" />
                         <ComboBox ItemsSource="{Binding UnitChoices}" SelectedItem="{Binding SelectedUnits}" AutomationProperties.AutomationId="CalibrationUnitsSelector" />
@@ -118,9 +118,10 @@
                             <Button Content="Delete" Command="{Binding DeleteCalibrationProfileCommand}" AutomationProperties.AutomationId="DeleteCalibrationProfileButton" />
                         </UniformGrid>
                         <TextBlock Text="{Binding MeasurementStatus}" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,12" AutomationProperties.AutomationId="MeasurementStatusText" />
-                        <UniformGrid Columns="3" Margin="0,0,0,14">
+                        <UniformGrid Columns="2" Margin="0,0,0,14">
                             <Button Content="Save clean" Command="{Binding SaveCleanFrameCommand}" AutomationProperties.AutomationId="SaveCleanFrameButton" />
                             <Button Content="Save annotated" Click="SaveAnnotatedFrame_Click" AutomationProperties.AutomationId="SaveAnnotatedFrameButton" />
+                            <Button Content="Open inspection" Click="OpenInspection_Click" AutomationProperties.AutomationId="OpenInspectionButton" />
                             <Button Content="Save JSON" Command="{Binding SaveInspectionSidecarCommand}" AutomationProperties.AutomationId="SaveInspectionSidecarButton" />
                         </UniformGrid>
 

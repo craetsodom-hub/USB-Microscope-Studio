@@ -26,6 +26,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private int _formatLoadRequestId;
     private int _previewStartRequestId;
     private bool _suppressFormatLoad;
+    private int _annotationRotationDegrees;
+    private bool _annotationMirrored;
 
     public MainViewModel(
         ICameraCatalog cameraCatalog,
@@ -68,6 +70,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public ObservableCollection<InspectionAnnotation> Annotations { get; } = [];
 
     public ObservableCollection<CalibrationProfile> CalibrationProfiles { get; } = [];
+
+    public ObservableCollection<CalibrationProfile> VisibleCalibrationProfiles { get; } = [];
 
     public IReadOnlyList<InspectionTool> ToolChoices { get; } =
     [
@@ -169,6 +173,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private string measurementStatus = "Uncalibrated";
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(UndoAnnotationsCommand))]
+    private bool canUndoAnnotations;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(RedoAnnotationsCommand))]
+    private bool canRedoAnnotations;
+
+    [ObservableProperty]
     private double currentFps;
 
     [ObservableProperty]
@@ -193,6 +205,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     partial void OnSelectedCameraChanged(CameraDevice? value)
     {
+        RefreshMatchingCalibrationProfiles();
         if (!_suppressFormatLoad)
         {
             _ = LoadFormatsForSelectionAsync(value);
@@ -201,15 +214,24 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     partial void OnSelectedFormatChanged(CameraFormat? value)
     {
+        RefreshMatchingCalibrationProfiles();
         if (IsPreviewing && SelectedCamera is not null && value is not null)
         {
             _ = StartPreviewAsync();
         }
     }
 
-    partial void OnIsMirroredChanged(bool value) => UpdatePreviewTransforms();
+    partial void OnIsMirroredChanged(bool value)
+    {
+        TransformAnnotationsForFrameTransform();
+        UpdatePreviewTransforms();
+    }
 
-    partial void OnRotationDegreesChanged(int value) => UpdatePreviewTransforms();
+    partial void OnRotationDegreesChanged(int value)
+    {
+        TransformAnnotationsForFrameTransform();
+        UpdatePreviewTransforms();
+    }
 
     partial void OnSnapshotFolderPathChanged(string value)
     {
@@ -218,6 +240,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     partial void OnSelectedCalibrationProfileChanged(CalibrationProfile? value)
     {
+        if (value is not null && !MatchesCurrentCameraFormat(value))
+        {
+            SelectedCalibrationProfile = null;
+            return;
+        }
+
         CalibrationStatus = value is null
             ? "Uncalibrated"
             : $"Calibrated: {value.Name} ({value.UnitsPerPixel:0.####} {value.Units}/px)";
@@ -368,19 +396,25 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    public void CaptureAnnotationHistory() => _annotationHistory.Capture(Annotations);
+    public void CaptureAnnotationHistory()
+    {
+        _annotationHistory.Capture(Annotations);
+        UpdateAnnotationCommandState();
+    }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanUndoAnnotations))]
     public void UndoAnnotations()
     {
         _annotationHistory.Undo(Annotations);
+        UpdateAnnotationCommandState();
         UpdateMeasurementStatus();
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanRedoAnnotations))]
     public void RedoAnnotations()
     {
         _annotationHistory.Redo(Annotations);
+        UpdateAnnotationCommandState();
         UpdateMeasurementStatus();
     }
 
@@ -393,6 +427,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
 
         _annotationHistory.Capture(Annotations);
+        UpdateAnnotationCommandState();
         Annotations.Clear();
         UpdateMeasurementStatus();
     }
@@ -415,10 +450,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 SelectedFormat,
                 reference.Points[0],
                 reference.Points[^1],
+                PreviewWidth,
+                PreviewHeight,
                 KnownCalibrationLength,
                 SelectedUnits);
 
             CalibrationProfiles.Add(profile);
+            RefreshMatchingCalibrationProfiles();
             SelectedCalibrationProfile = profile;
             SaveCalibrationProfiles();
             StatusMessage = $"Calibration profile saved: {profile.Name}";
@@ -439,6 +477,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         var renamed = SelectedCalibrationProfile with { Name = string.IsNullOrWhiteSpace(CalibrationProfileName) ? SelectedCalibrationProfile.Name : CalibrationProfileName };
         ReplaceCalibrationProfile(SelectedCalibrationProfile, renamed);
+        RefreshMatchingCalibrationProfiles();
         SelectedCalibrationProfile = renamed;
         SaveCalibrationProfiles();
     }
@@ -452,7 +491,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
 
         CalibrationProfiles.Remove(SelectedCalibrationProfile);
-        SelectedCalibrationProfile = CalibrationProfiles.FirstOrDefault();
+        RefreshMatchingCalibrationProfiles();
         SaveCalibrationProfiles();
     }
 
@@ -477,6 +516,52 @@ public partial class MainViewModel : ObservableObject, IDisposable
         var document = CreateInspectionDocument(LastSnapshotPath, annotatedFramePath);
         _annotationSerializer.Save(sidecarPath, document);
         StatusMessage = $"Annotated frame saved: {annotatedFramePath}";
+    }
+
+    public void OpenInspection(string sidecarPath)
+    {
+        var document = _annotationSerializer.Load(sidecarPath);
+        Annotations.Clear();
+        foreach (var annotation in document.Annotations)
+        {
+            Annotations.Add(annotation);
+        }
+
+        LastSnapshotPath = document.CleanFramePath;
+        if (!string.IsNullOrWhiteSpace(document.CleanFramePath) && File.Exists(document.CleanFramePath))
+        {
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.UriSource = new Uri(document.CleanFramePath, UriKind.Absolute);
+            bitmap.EndInit();
+            bitmap.Freeze();
+            PreviewFrame = bitmap;
+            PreviewWidth = bitmap.PixelWidth;
+            PreviewHeight = bitmap.PixelHeight;
+        }
+
+        if (document.CalibrationProfile is not null && MatchesCurrentCameraFormat(document.CalibrationProfile))
+        {
+            var existing = CalibrationProfiles.FirstOrDefault(profile => profile.ProfileKey == document.CalibrationProfile.ProfileKey);
+            if (existing is null)
+            {
+                CalibrationProfiles.Add(document.CalibrationProfile);
+                existing = document.CalibrationProfile;
+                SaveCalibrationProfiles();
+            }
+
+            RefreshMatchingCalibrationProfiles();
+            SelectedCalibrationProfile = existing;
+        }
+        else
+        {
+            RefreshMatchingCalibrationProfiles();
+            SelectedCalibrationProfile = null;
+        }
+
+        UpdateMeasurementStatus();
+        StatusMessage = $"Inspection opened: {sidecarPath}";
     }
 
     public void Dispose()
@@ -546,16 +631,50 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _previewService.TransformOptions = new FrameTransformOptions(IsMirrored, RotationDegrees);
     }
 
+    private void TransformAnnotationsForFrameTransform()
+    {
+        var rotationDelta = NormalizeRotation(RotationDegrees - _annotationRotationDegrees);
+        var mirrorChanged = IsMirrored != _annotationMirrored;
+        if (Annotations.Count > 0 && (rotationDelta != 0 || mirrorChanged))
+        {
+            _annotationHistory.Capture(Annotations);
+            for (var i = 0; i < Annotations.Count; i++)
+            {
+                var transformedPoints = Annotations[i].Points
+                    .Select(point =>
+                    {
+                        var transformed = InspectionGeometry.RotateClockwise(point, rotationDelta);
+                        return mirrorChanged ? InspectionGeometry.MirrorHorizontal(transformed) : transformed;
+                    })
+                    .ToList();
+                Annotations[i] = Annotations[i] with { Points = transformedPoints };
+            }
+
+            UpdateAnnotationCommandState();
+        }
+
+        _annotationRotationDegrees = RotationDegrees;
+        _annotationMirrored = IsMirrored;
+        UpdateMeasurementStatus();
+    }
+
     private void UpdateMeasurementStatus()
     {
         var measurement = Annotations.LastOrDefault(annotation => annotation.Tool is InspectionTool.Distance or InspectionTool.Angle && annotation.Points.Count >= 2);
         if (measurement is null)
         {
-            MeasurementStatus = SelectedCalibrationProfile is null ? "Uncalibrated" : "No measurement";
+            MeasurementStatus = ActiveCalibrationProfile() is null ? "Uncalibrated" : "No measurement";
             return;
         }
 
-        var result = _calibrationCalculator.MeasureDistance(measurement.Points[0], measurement.Points[^1], SelectedCalibrationProfile);
+        if (measurement.Tool == InspectionTool.Angle && measurement.Points.Count >= 3)
+        {
+            var angle = InspectionGeometry.ThreePointAngleDegrees(measurement.Points[0], measurement.Points[1], measurement.Points[2], PreviewWidth, PreviewHeight);
+            MeasurementStatus = ActiveCalibrationProfile() is null ? $"Angle {angle:0.#} deg - Uncalibrated" : $"Angle {angle:0.#} deg";
+            return;
+        }
+
+        var result = _calibrationCalculator.MeasureDistance(measurement.Points[0], measurement.Points[^1], PreviewWidth, PreviewHeight, ActiveCalibrationProfile());
         MeasurementStatus = result.IsCalibrated && result.RealLength is not null
             ? $"{result.RealLength:0.###} {UnitLabel(result.Units)} at {result.AngleDegrees:0.#} deg"
             : "Uncalibrated";
@@ -568,11 +687,18 @@ public partial class MainViewModel : ObservableObject, IDisposable
         CameraId = SelectedCamera?.Id,
         Format = SelectedFormat?.DisplayName,
         CalibrationStatus = CalibrationStatus,
-        CalibrationProfile = SelectedCalibrationProfile,
+        CalibrationProfile = ActiveCalibrationProfile(),
         Annotations = [.. Annotations],
         Measurements = Annotations
             .Where(annotation => annotation.IsMeasurement && annotation.Points.Count >= 2)
-            .Select(annotation => _calibrationCalculator.MeasureDistance(annotation.Points[0], annotation.Points[^1], SelectedCalibrationProfile))
+            .Select(annotation => annotation.Tool == InspectionTool.Angle && annotation.Points.Count >= 3
+                ? new MeasurementResult(
+                    InspectionGeometry.PixelDistance(annotation.Points[0], annotation.Points[^1], PreviewWidth, PreviewHeight),
+                    null,
+                    InspectionGeometry.ThreePointAngleDegrees(annotation.Points[0], annotation.Points[1], annotation.Points[2], PreviewWidth, PreviewHeight),
+                    ActiveCalibrationProfile()?.Units ?? InspectionUnits.Millimetres,
+                    ActiveCalibrationProfile() is not null)
+                : _calibrationCalculator.MeasureDistance(annotation.Points[0], annotation.Points[^1], PreviewWidth, PreviewHeight, ActiveCalibrationProfile()))
             .ToList()
     };
 
@@ -583,6 +709,40 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             CalibrationProfiles[index] = newProfile;
         }
+    }
+
+    private void RefreshMatchingCalibrationProfiles()
+    {
+        var selectedKey = SelectedCalibrationProfile?.ProfileKey;
+        VisibleCalibrationProfiles.Clear();
+        foreach (var profile in CalibrationProfiles.Where(MatchesCurrentCameraFormat))
+        {
+            VisibleCalibrationProfiles.Add(profile);
+        }
+
+        SelectedCalibrationProfile = VisibleCalibrationProfiles.FirstOrDefault(profile => profile.ProfileKey == selectedKey);
+    }
+
+    private CalibrationProfile? ActiveCalibrationProfile() =>
+        MatchesCurrentCameraFormat(SelectedCalibrationProfile) ? SelectedCalibrationProfile : null;
+
+    private bool MatchesCurrentCameraFormat(CalibrationProfile? profile) =>
+        profile is not null &&
+        SelectedCamera is not null &&
+        SelectedFormat is not null &&
+        profile.CameraId == SelectedCamera.Id &&
+        FormatsMatch(profile.Format, SelectedFormat);
+
+    private static bool FormatsMatch(CameraFormat left, CameraFormat right) =>
+        left.Width == right.Width &&
+        left.Height == right.Height &&
+        Math.Abs(left.FramesPerSecond - right.FramesPerSecond) < 0.001 &&
+        string.Equals(left.PixelFormat, right.PixelFormat, StringComparison.OrdinalIgnoreCase);
+
+    private void UpdateAnnotationCommandState()
+    {
+        CanUndoAnnotations = _annotationHistory.CanUndo;
+        CanRedoAnnotations = _annotationHistory.CanRedo;
     }
 
     private void SaveCalibrationProfiles() => _calibrationProfileStore.Save(CalibrationProfiles);
