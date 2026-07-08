@@ -9,9 +9,7 @@ namespace UsbMicroscopeStudio;
 public partial class MainWindow : Window
 {
     private readonly MainViewModel _viewModel;
-    private WindowState _previousWindowState;
-    private WindowStyle _previousWindowStyle;
-    private ResizeMode _previousResizeMode;
+    private readonly WindowFullscreenStateController _fullscreenStateController;
 
     public MainWindow()
     {
@@ -25,6 +23,7 @@ public partial class MainWindow : Window
             new WpfUiDispatcher());
 
         DataContext = _viewModel;
+        _fullscreenStateController = new WindowFullscreenStateController(new WpfWindowStateAdapter(this));
         _viewModel.PropertyChanged += ViewModelOnPropertyChanged;
         Loaded += MainWindow_Loaded;
         Closing += MainWindow_Closing;
@@ -51,20 +50,7 @@ public partial class MainWindow : Window
 
     private void ApplyFullscreen(bool isFullscreen)
     {
-        if (isFullscreen)
-        {
-            _previousWindowState = WindowState;
-            _previousWindowStyle = WindowStyle;
-            _previousResizeMode = ResizeMode;
-            WindowStyle = WindowStyle.None;
-            ResizeMode = ResizeMode.NoResize;
-            WindowState = WindowState.Maximized;
-            return;
-        }
-
-        WindowStyle = _previousWindowStyle;
-        ResizeMode = _previousResizeMode;
-        WindowState = _previousWindowState;
+        _fullscreenStateController.SetFullscreen(isFullscreen);
     }
 
     private void Window_KeyDown(object sender, KeyEventArgs e)
