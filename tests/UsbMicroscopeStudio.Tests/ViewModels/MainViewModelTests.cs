@@ -38,6 +38,45 @@ public sealed class MainViewModelTests
     }
 
     [Fact]
+    public async Task RapidCameraSwitching_IgnoresStaleFormatLoads()
+    {
+        var cameraA = new CameraDevice("usb://camera-a", "Camera A", 0);
+        var cameraB = new CameraDevice("usb://camera-b", "Camera B", 1);
+        var formatA = new CameraFormat(640, 480, 30);
+        var formatB = new CameraFormat(1920, 1080, 60);
+        var catalog = new FakeCameraCatalog(
+            [cameraA, cameraB],
+            async camera =>
+            {
+                await Task.Delay(camera == cameraB ? 150 : 10);
+                return camera == cameraB ? [formatB] : [formatA];
+            });
+        using var viewModel = CreateViewModel(catalog);
+
+        await viewModel.RefreshCamerasAsync();
+        viewModel.SelectedCamera = cameraB;
+        viewModel.SelectedCamera = cameraA;
+        await Task.Delay(250);
+
+        Assert.Equal(cameraA, viewModel.SelectedCamera);
+        Assert.Equal(formatA, viewModel.SelectedFormat);
+        Assert.DoesNotContain(formatB, viewModel.Formats);
+    }
+
+    [Fact]
+    public async Task StartPreviewAsync_WhenPreviewServiceFails_DoesNotEnterPreviewingState()
+    {
+        var preview = new FakePreviewService { FailOnStart = true };
+        using var viewModel = CreateViewModel(previewService: preview);
+
+        await viewModel.RefreshCamerasAsync();
+        await viewModel.StartPreviewAsync();
+
+        Assert.False(viewModel.IsPreviewing);
+        Assert.StartsWith("Preview failed to start:", viewModel.StatusMessage);
+    }
+
+    [Fact]
     public void FreezeKeepsExistingFrame()
     {
         var preview = new FakePreviewService();
@@ -120,11 +159,25 @@ public sealed class MainViewModelTests
         return bitmap;
     }
 
-    private sealed class FakeCameraCatalog(IReadOnlyList<CameraDevice> cameras, IReadOnlyList<CameraFormat> formats) : ICameraCatalog
+    private sealed class FakeCameraCatalog : ICameraCatalog
     {
-        public Task<IReadOnlyList<CameraDevice>> GetCamerasAsync(CancellationToken cancellationToken = default) => Task.FromResult(cameras);
+        private readonly IReadOnlyList<CameraDevice> _cameras;
+        private readonly Func<CameraDevice, Task<IReadOnlyList<CameraFormat>>> _formatsFactory;
 
-        public Task<IReadOnlyList<CameraFormat>> GetFormatsAsync(CameraDevice camera, CancellationToken cancellationToken = default) => Task.FromResult(formats);
+        public FakeCameraCatalog(IReadOnlyList<CameraDevice> cameras, IReadOnlyList<CameraFormat> formats)
+            : this(cameras, camera => Task.FromResult(formats))
+        {
+        }
+
+        public FakeCameraCatalog(IReadOnlyList<CameraDevice> cameras, Func<CameraDevice, Task<IReadOnlyList<CameraFormat>>> formatsFactory)
+        {
+            _cameras = cameras;
+            _formatsFactory = formatsFactory;
+        }
+
+        public Task<IReadOnlyList<CameraDevice>> GetCamerasAsync(CancellationToken cancellationToken = default) => Task.FromResult(_cameras);
+
+        public Task<IReadOnlyList<CameraFormat>> GetFormatsAsync(CameraDevice camera, CancellationToken cancellationToken = default) => _formatsFactory(camera);
     }
 
     private sealed class FakePreviewService : ICameraPreviewService
@@ -141,8 +194,15 @@ public sealed class MainViewModelTests
 
         public CameraFormat? StartedFormat { get; private set; }
 
+        public bool FailOnStart { get; init; }
+
         public Task StartAsync(CameraDevice camera, CameraFormat format, CancellationToken cancellationToken = default)
         {
+            if (FailOnStart)
+            {
+                throw new InvalidOperationException("Camera refused to start.");
+            }
+
             StartedCamera = camera;
             StartedFormat = format;
             IsRunning = true;

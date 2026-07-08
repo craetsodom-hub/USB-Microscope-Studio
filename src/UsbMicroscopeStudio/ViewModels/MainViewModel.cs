@@ -13,6 +13,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly ICameraPreviewService _previewService;
     private readonly ISnapshotService _snapshotService;
     private readonly IUiDispatcher _uiDispatcher;
+    private readonly SemaphoreSlim _previewGate = new(1, 1);
+    private int _formatLoadRequestId;
+    private int _previewStartRequestId;
     private bool _suppressFormatLoad;
 
     public MainViewModel(
@@ -123,16 +126,52 @@ public partial class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        UpdatePreviewTransforms();
-        await _previewService.StartAsync(SelectedCamera, SelectedFormat);
-        IsPreviewing = true;
+        var requestId = Interlocked.Increment(ref _previewStartRequestId);
+        var camera = SelectedCamera;
+        var format = SelectedFormat;
+
+        await _previewGate.WaitAsync();
+        try
+        {
+            if (requestId != _previewStartRequestId)
+            {
+                return;
+            }
+
+            UpdatePreviewTransforms();
+            StatusMessage = $"Starting {camera.DisplayName}...";
+            await _previewService.StartAsync(camera, format);
+
+            if (requestId == _previewStartRequestId)
+            {
+                IsPreviewing = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            IsPreviewing = false;
+            StatusMessage = $"Preview failed to start: {ex.Message}";
+        }
+        finally
+        {
+            _previewGate.Release();
+        }
     }
 
     [RelayCommand(CanExecute = nameof(IsPreviewing))]
     public async Task StopPreviewAsync()
     {
-        await _previewService.StopAsync();
-        IsPreviewing = false;
+        Interlocked.Increment(ref _previewStartRequestId);
+        await _previewGate.WaitAsync();
+        try
+        {
+            await _previewService.StopAsync();
+            IsPreviewing = false;
+        }
+        finally
+        {
+            _previewGate.Release();
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanSnapshot))]
@@ -143,8 +182,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        LastSnapshotPath = _snapshotService.SaveSnapshot(PreviewFrame);
-        StatusMessage = $"Snapshot saved: {LastSnapshotPath}";
+        try
+        {
+            LastSnapshotPath = _snapshotService.SaveSnapshot(PreviewFrame);
+            StatusMessage = $"Snapshot saved: {LastSnapshotPath}";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Snapshot failed: {ex.Message}";
+        }
     }
 
     [RelayCommand]
@@ -181,10 +227,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _previewService.FrameReady -= OnFrameReady;
         _previewService.StatusChanged -= OnStatusChanged;
         _previewService.Dispose();
+        _previewGate.Dispose();
     }
 
     private async Task LoadFormatsForSelectionAsync(CameraDevice? camera)
     {
+        var requestId = Interlocked.Increment(ref _formatLoadRequestId);
         Formats.Clear();
         if (camera is null)
         {
@@ -193,6 +241,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         StatusMessage = $"Loading formats for {camera.DisplayName}...";
         var formats = await _cameraCatalog.GetFormatsAsync(camera);
+        if (requestId != _formatLoadRequestId || SelectedCamera != camera)
+        {
+            return;
+        }
+
         foreach (var format in formats)
         {
             Formats.Add(format);

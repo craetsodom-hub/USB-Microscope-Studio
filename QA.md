@@ -13,10 +13,14 @@ Covered by unit tests:
 
 - Camera refresh selects hardware before Demo Mode.
 - Formats load after selection.
+- Rapid camera switching ignores stale format results.
+- Failed preview startup does not enter the previewing state.
 - Preview start passes selected camera and format to the preview service.
 - Freeze preserves the last displayed frame.
 - Rotate and mirror update preview transforms.
 - Snapshot saves the current frame.
+- Snapshot filename collisions create unique PNG files.
+- Invalid snapshot folders fall back to a temp snapshot folder.
 - Zoom clamps to the supported range.
 
 ## Manual Test Plan
