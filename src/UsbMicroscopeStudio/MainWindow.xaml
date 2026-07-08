@@ -1,0 +1,112 @@
+<Window x:Class="UsbMicroscopeStudio.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="USB Microscope Studio"
+        Width="1280"
+        Height="820"
+        MinWidth="980"
+        MinHeight="620"
+        Background="{StaticResource SurfaceBrush}"
+        FontFamily="Segoe UI"
+        KeyDown="Window_KeyDown">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="56" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="34" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="0,0,0,1">
+            <Grid Margin="18,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="USB Microscope Studio" FontSize="18" FontWeight="SemiBold" AutomationProperties.AutomationId="AppTitle" />
+                    <TextBlock Text="Phase 1 live inspection" Foreground="{StaticResource MutedTextBrush}" FontSize="12" AutomationProperties.AutomationId="AppSubtitle" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="Refresh" Command="{Binding RefreshCamerasCommand}" AutomationProperties.AutomationId="RefreshCamerasButton" />
+                    <Button Content="Start" Command="{Binding StartPreviewCommand}" AutomationProperties.AutomationId="StartPreviewButton" />
+                    <Button Content="Stop" Command="{Binding StopPreviewCommand}" AutomationProperties.AutomationId="StopPreviewButton" />
+                    <Button Content="Snapshot" Command="{Binding SnapshotCommand}" AutomationProperties.AutomationId="SnapshotButton" />
+                    <Button Content="Fullscreen" Command="{Binding ToggleFullscreenCommand}" AutomationProperties.AutomationId="FullscreenButton" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="320" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="0,0,1,0" Padding="18">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Camera" FontSize="13" FontWeight="SemiBold" />
+                        <ComboBox ItemsSource="{Binding Cameras}" SelectedItem="{Binding SelectedCamera}" DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="CameraSelector" />
+
+                        <TextBlock Text="Resolution / FPS" FontSize="13" FontWeight="SemiBold" />
+                        <ComboBox ItemsSource="{Binding Formats}" SelectedItem="{Binding SelectedFormat}" DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="FormatSelector" />
+
+                        <TextBlock Text="Capture" FontSize="13" FontWeight="SemiBold" Margin="0,6,0,8" />
+                        <UniformGrid Columns="2" Margin="0,0,0,10">
+                            <Button Content="Start" Command="{Binding StartPreviewCommand}" AutomationProperties.AutomationId="RailStartPreviewButton" />
+                            <Button Content="Stop" Command="{Binding StopPreviewCommand}" AutomationProperties.AutomationId="RailStopPreviewButton" />
+                            <Button Content="Snapshot" Command="{Binding SnapshotCommand}" AutomationProperties.AutomationId="RailSnapshotButton" />
+                            <Button Content="Fullscreen" Command="{Binding ToggleFullscreenCommand}" AutomationProperties.AutomationId="RailFullscreenButton" />
+                        </UniformGrid>
+
+                        <TextBlock Text="View" FontSize="13" FontWeight="SemiBold" Margin="0,6,0,8" />
+                        <UniformGrid Columns="3" Margin="0,0,0,10">
+                            <Button Content="-" Command="{Binding ZoomOutCommand}" AutomationProperties.AutomationId="ZoomOutButton" />
+                            <Button Content="+" Command="{Binding ZoomInCommand}" AutomationProperties.AutomationId="ZoomInButton" />
+                            <Button Content="Reset" Command="{Binding ResetViewCommand}" AutomationProperties.AutomationId="ResetViewButton" />
+                        </UniformGrid>
+
+                        <Slider Minimum="0.25" Maximum="4" TickFrequency="0.25" Value="{Binding ZoomLevel}" AutomationProperties.AutomationId="ZoomSlider" />
+                        <TextBlock Text="{Binding ZoomLevel, StringFormat=Zoom {0:0.00}x}" Foreground="{StaticResource MutedTextBrush}" Margin="0,2,0,16" AutomationProperties.AutomationId="ZoomReadout" />
+
+                        <UniformGrid Columns="2" Margin="0,0,0,10">
+                            <Button Content="Rotate Left" Command="{Binding RotateLeftCommand}" AutomationProperties.AutomationId="RotateLeftButton" />
+                            <Button Content="Rotate Right" Command="{Binding RotateRightCommand}" AutomationProperties.AutomationId="RotateRightButton" />
+                        </UniformGrid>
+
+                        <CheckBox Content="Mirror horizontal" IsChecked="{Binding IsMirrored}" Margin="0,8,0,8" AutomationProperties.AutomationId="MirrorToggle" />
+                        <CheckBox Content="Freeze preview" IsChecked="{Binding IsFrozen}" Margin="0,0,0,18" AutomationProperties.AutomationId="FreezeToggle" />
+
+                        <Border BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="1" Padding="12" Background="#FAFBFC">
+                            <StackPanel>
+                                <TextBlock Text="Session" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding CurrentFps, StringFormat=FPS {0:0.0}}" Foreground="{StaticResource MutedTextBrush}" Margin="0,8,0,0" AutomationProperties.AutomationId="FpsReadout" />
+                                <TextBlock Text="{Binding RotationDegrees, StringFormat=Rotation {0} deg}" Foreground="{StaticResource MutedTextBrush}" Margin="0,4,0,0" AutomationProperties.AutomationId="RotationReadout" />
+                                <TextBlock Text="{Binding LastSnapshotPath}" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" Margin="0,10,0,0" AutomationProperties.AutomationId="LastSnapshotPath" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <Grid x:Name="PreviewHost" Grid.Column="1" Background="#202326" ClipToBounds="True" AutomationProperties.AutomationId="PreviewHost">
+                <Viewbox Stretch="Uniform" AutomationProperties.AutomationId="PreviewViewbox">
+                    <Viewbox.RenderTransform>
+                        <ScaleTransform ScaleX="{Binding ZoomLevel}" ScaleY="{Binding ZoomLevel}" />
+                    </Viewbox.RenderTransform>
+                    <Viewbox.RenderTransformOrigin>0.5,0.5</Viewbox.RenderTransformOrigin>
+                    <Image Source="{Binding PreviewFrame}" Stretch="None" RenderOptions.BitmapScalingMode="HighQuality" AutomationProperties.AutomationId="LivePreviewImage" />
+                </Viewbox>
+            </Grid>
+        </Grid>
+
+        <Border Grid.Row="2" Background="#FFFFFF" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="0,1,0,0" Padding="14,0">
+            <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" Foreground="{StaticResource MutedTextBrush}" AutomationProperties.AutomationId="StatusText" />
+        </Border>
+    </Grid>
+</Window>
