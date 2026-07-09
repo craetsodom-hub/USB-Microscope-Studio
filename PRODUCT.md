@@ -1,5 +1,18 @@
 # Product
 
+## Phase 3C Goal
+
+Make USB Microscope Studio feel like a serious technician inspection product instead of a basic WPF utility. Phase 3C improves presentation quality, visual hierarchy, and control organization while preserving the existing Phase 1, Phase 2, Phase 3A, and Phase 3B workflows.
+
+## Phase 3C Included
+
+- Premium dark graphite workspace with high-contrast microscope preview.
+- Reusable WPF styles for command buttons, compact header buttons, panels, fields, combo boxes, tabs, and status badges.
+- Tabbed control rail organized into Camera, Session, Inspect, Calibration, and Export.
+- Session header showing project, customer/device/camera/format context and inspection state.
+- Professional status bar treatment for preview, reconnect, and session-folder messages.
+- Updated screenshot and QA checks for the redesigned technician UI.
+
 ## Phase 3B Goal
 
 Add offline HTML inspection reports for saved inspection sessions. Phase 3B turns saved session data, frame images, annotations, measurements, and metadata into a technician-readable report without adding PDF export or packaging.
@@ -51,7 +64,7 @@ Build a reliable technician-focused Windows app for USB/UVC microscope inspectio
 - Freeze & Inspect mode plus clean-frame, annotated-frame, JSON sidecar save, and open-inspection workflows.
 - Annotated PNG export at native frame dimensions, independent of current UI zoom, letterboxing, fullscreen state, or taskbar content.
 
-## Excluded From Phase 3B
+## Excluded From Phase 3C
 
 - Recording.
 - PDF reports.
@@ -59,7 +72,7 @@ Build a reliable technician-focused Windows app for USB/UVC microscope inspectio
 - Licensing.
 - Microsoft Store packaging.
 - Release packaging.
-- Full UI redesign.
+- New inspection features.
 
 ## Primary User
 

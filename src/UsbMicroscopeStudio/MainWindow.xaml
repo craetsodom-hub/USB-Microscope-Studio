@@ -6,196 +6,397 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="USB Microscope Studio"
-        Width="1280"
-        Height="820"
-        MinWidth="980"
+        Width="960"
+        Height="720"
+        MinWidth="900"
         MinHeight="620"
         Background="{StaticResource SurfaceBrush}"
         FontFamily="Segoe UI"
         KeyDown="Window_KeyDown">
-    <Grid>
+    <Grid Background="{StaticResource SurfaceBrush}">
         <Grid.RowDefinitions>
-            <RowDefinition Height="56" />
+            <RowDefinition Height="116" />
+            <RowDefinition Height="86" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="34" />
+            <RowDefinition Height="38" />
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="0,0,0,1">
-            <Grid Margin="18,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+        <Border Grid.Row="0" Background="#0D131A" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="0,0,0,1">
+            <Grid Margin="22,10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-                <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="USB Microscope Studio" FontSize="18" FontWeight="SemiBold" AutomationProperties.AutomationId="AppTitle" />
-                    <TextBlock Text="Phase 2 inspection tools" Foreground="{StaticResource MutedTextBrush}" FontSize="12" AutomationProperties.AutomationId="AppSubtitle" />
+                <StackPanel>
+                    <TextBlock Text="USB Microscope Studio" FontSize="20" FontWeight="SemiBold" AutomationProperties.AutomationId="AppTitle" />
+                    <TextBlock Text="Professional microscope inspection workspace" Style="{StaticResource MutedTextStyle}" AutomationProperties.AutomationId="AppSubtitle" />
                 </StackPanel>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="Refresh" Command="{Binding RefreshCamerasCommand}" AutomationProperties.AutomationId="RefreshCamerasButton" />
-                    <Button Content="Start" Command="{Binding StartPreviewCommand}" AutomationProperties.AutomationId="StartPreviewButton" />
-                    <Button Content="Stop" Command="{Binding StopPreviewCommand}" AutomationProperties.AutomationId="StopPreviewButton" />
-                    <Button Content="Snapshot" Command="{Binding SnapshotCommand}" AutomationProperties.AutomationId="SnapshotButton" />
-                    <Button Content="Fullscreen" Command="{Binding ToggleFullscreenCommand}" AutomationProperties.AutomationId="FullscreenButton" />
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,0">
+                    <Button Content="Refresh" Command="{Binding RefreshCamerasCommand}" Style="{StaticResource CompactCommandButtonStyle}" AutomationProperties.AutomationId="RefreshCamerasButton" />
+                    <Button Content="Start" Command="{Binding StartPreviewCommand}" Style="{StaticResource CompactPrimaryCommandButtonStyle}" AutomationProperties.AutomationId="StartPreviewButton" />
+                    <Button Content="Stop" Command="{Binding StopPreviewCommand}" Style="{StaticResource CompactCommandButtonStyle}" AutomationProperties.AutomationId="StopPreviewButton" />
+                    <Button Content="Snap" Command="{Binding SnapshotCommand}" Style="{StaticResource CompactCommandButtonStyle}" AutomationProperties.AutomationId="SnapshotButton" />
+                    <Button Content="Full" Command="{Binding ToggleFullscreenCommand}" Style="{StaticResource CompactCommandButtonStyle}" AutomationProperties.AutomationId="FullscreenButton" />
                 </StackPanel>
             </Grid>
         </Border>
 
-        <Grid Grid.Row="1">
+        <Border Grid.Row="1" Background="#101821" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="0,0,0,1" Padding="22,12">
+            <DockPanel LastChildFill="True">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Style="{StaticResource StatusBadgeStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Calibration" Style="{StaticResource MutedTextStyle}" />
+                            <TextBlock Text="{Binding CalibrationStatus}" FontSize="12" FontWeight="SemiBold" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource StatusBadgeStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Session file" Style="{StaticResource MutedTextStyle}" />
+                            <TextBlock Text="{Binding CurrentSessionJsonPath, TargetNullValue=Unsaved}" FontSize="12" MaxWidth="180" TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource StatusBadgeStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Last report" Style="{StaticResource MutedTextStyle}" />
+                            <TextBlock Text="{Binding LastReportPath, TargetNullValue=Not exported}" FontSize="12" MaxWidth="180" TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Text="{Binding SessionName}" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <Border Style="{StaticResource StatusBadgeStyle}">
+                            <TextBlock Text="{Binding CustomerName, StringFormat=Customer: {0}, TargetNullValue=Customer: Not specified}" Style="{StaticResource MutedTextStyle}" />
+                        </Border>
+                        <Border Style="{StaticResource StatusBadgeStyle}">
+                            <TextBlock Text="{Binding DeviceModel, StringFormat=Device: {0}, TargetNullValue=Device: Not specified}" Style="{StaticResource MutedTextStyle}" />
+                        </Border>
+                        <Border Style="{StaticResource StatusBadgeStyle}">
+                            <TextBlock Text="{Binding SelectedCamera.DisplayName, StringFormat=Camera: {0}, TargetNullValue=Camera: None}" Style="{StaticResource MutedTextStyle}" />
+                        </Border>
+                        <Border Style="{StaticResource StatusBadgeStyle}">
+                            <TextBlock Text="{Binding SelectedFormat.DisplayName, StringFormat=Format: {0}, TargetNullValue=Format: None}" Style="{StaticResource MutedTextStyle}" />
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Grid Grid.Row="2" Margin="18">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="320" />
+                <ColumnDefinition Width="360" />
+                <ColumnDefinition Width="18" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="0,0,1,0" Padding="18">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
-                        <TextBlock Text="Camera" FontSize="13" FontWeight="SemiBold" />
-                        <ComboBox ItemsSource="{Binding Cameras}" SelectedItem="{Binding SelectedCamera}" DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="CameraSelector" />
+            <Border Grid.Column="0" Style="{StaticResource PanelCardStyle}" Padding="12" Margin="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
 
-                        <TextBlock Text="Resolution / FPS" FontSize="13" FontWeight="SemiBold" />
-                        <ComboBox ItemsSource="{Binding Formats}" SelectedItem="{Binding SelectedFormat}" DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="FormatSelector" />
-
-                        <TextBlock Text="Capture" FontSize="13" FontWeight="SemiBold" Margin="0,6,0,8" />
-                        <UniformGrid Columns="2" Margin="0,0,0,10">
-                            <Button Content="Start" Command="{Binding StartPreviewCommand}" AutomationProperties.AutomationId="RailStartPreviewButton" />
-                            <Button Content="Stop" Command="{Binding StopPreviewCommand}" AutomationProperties.AutomationId="RailStopPreviewButton" />
-                            <Button Content="Snapshot" Command="{Binding SnapshotCommand}" AutomationProperties.AutomationId="RailSnapshotButton" />
-                            <Button Content="Fullscreen" Command="{Binding ToggleFullscreenCommand}" AutomationProperties.AutomationId="RailFullscreenButton" />
-                        </UniformGrid>
-
-                        <TextBlock Text="Snapshot folder" FontSize="13" FontWeight="SemiBold" Margin="0,6,0,8" />
-                        <Button Content="Choose folder" Command="{Binding ChooseSnapshotFolderCommand}" AutomationProperties.AutomationId="ChooseSnapshotFolderButton" />
-                        <TextBlock Text="{Binding SnapshotFolderPath}" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" Margin="0,2,0,14" AutomationProperties.AutomationId="SnapshotFolderPathText" />
-
-                        <TextBlock Text="Session" FontSize="13" FontWeight="SemiBold" Margin="0,6,0,8" />
-                        <UniformGrid Columns="2" Margin="0,0,0,8">
-                            <Button Content="New" Command="{Binding NewSessionCommand}" AutomationProperties.AutomationId="NewSessionButton" />
-                            <Button Content="Save" Command="{Binding SaveSessionCommand}" AutomationProperties.AutomationId="SaveSessionButton" />
-                            <Button Content="Save As" Command="{Binding SaveSessionAsCommand}" AutomationProperties.AutomationId="SaveSessionAsButton" />
-                            <Button Content="Open" Click="OpenSession_Click" AutomationProperties.AutomationId="OpenSessionButton" />
-                        </UniformGrid>
-                        <ComboBox ItemsSource="{Binding RecentSessions}" SelectedItem="{Binding SelectedRecentSession}" DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="RecentSessionsSelector" />
-                        <Button Content="Open recent" Command="{Binding OpenRecentSessionCommand}" Margin="0,4,0,8" AutomationProperties.AutomationId="OpenRecentSessionButton" />
-                        <UniformGrid Columns="2" Margin="0,0,0,8">
-                            <Button Content="Export HTML Report" Command="{Binding ExportHtmlReportCommand}" AutomationProperties.AutomationId="ExportHtmlReportButton" />
-                            <Button Content="Open Last Report" Command="{Binding OpenLastReportCommand}" AutomationProperties.AutomationId="OpenLastReportButton" />
-                        </UniformGrid>
-                        <TextBlock Text="{Binding LastReportPath}" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,8" AutomationProperties.AutomationId="LastReportPathText" />
-                        <TextBlock Text="Project name" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
-                        <TextBox Text="{Binding SessionName, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="SessionNameTextBox" />
-                        <TextBlock Text="Customer" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
-                        <TextBox Text="{Binding CustomerName, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="CustomerNameTextBox" />
-                        <TextBlock Text="Device model" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
-                        <TextBox Text="{Binding DeviceModel, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="DeviceModelTextBox" />
-                        <TextBlock Text="Serial / asset tag" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
-                        <TextBox Text="{Binding SerialAssetTag, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="SerialAssetTagTextBox" />
-                        <TextBlock Text="Technician" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
-                        <TextBox Text="{Binding TechnicianName, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="TechnicianNameTextBox" />
-                        <TextBlock Text="Job / order number" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
-                        <TextBox Text="{Binding JobOrderNumber, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="JobOrderNumberTextBox" />
-                        <TextBlock Text="Notes" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
-                        <TextBox Text="{Binding SessionNotes, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" Height="62" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" AutomationProperties.AutomationId="SessionNotesTextBox" />
-                        <TextBlock Text="{Binding CurrentSessionFolderPath}" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" Margin="0,2,0,14" AutomationProperties.AutomationId="CurrentSessionFolderText" />
-
-                        <TextBlock Text="View" FontSize="13" FontWeight="SemiBold" Margin="0,6,0,8" />
-                        <UniformGrid Columns="3" Margin="0,0,0,10">
-                            <Button Content="-" Command="{Binding ZoomOutCommand}" AutomationProperties.AutomationId="ZoomOutButton" />
-                            <Button Content="+" Command="{Binding ZoomInCommand}" AutomationProperties.AutomationId="ZoomInButton" />
-                            <Button Content="Reset" Command="{Binding ResetViewCommand}" AutomationProperties.AutomationId="ResetViewButton" />
-                        </UniformGrid>
-
-                        <Slider Minimum="0.25" Maximum="4" TickFrequency="0.25" Value="{Binding ZoomLevel}" AutomationProperties.AutomationId="ZoomSlider" />
-                        <TextBlock Text="{Binding ZoomLevel, StringFormat=Zoom {0:0.00}x}" Foreground="{StaticResource MutedTextBrush}" Margin="0,2,0,16" AutomationProperties.AutomationId="ZoomReadout" />
-
-                        <UniformGrid Columns="2" Margin="0,0,0,10">
-                            <Button Content="Rotate Left" Command="{Binding RotateLeftCommand}" AutomationProperties.AutomationId="RotateLeftButton" />
-                            <Button Content="Rotate Right" Command="{Binding RotateRightCommand}" AutomationProperties.AutomationId="RotateRightButton" />
-                        </UniformGrid>
-
-                        <CheckBox Content="Mirror horizontal" IsChecked="{Binding IsMirrored}" Margin="0,8,0,8" AutomationProperties.AutomationId="MirrorToggle" />
-                        <CheckBox Content="Freeze preview" IsChecked="{Binding IsFrozen}" Margin="0,0,0,18" AutomationProperties.AutomationId="FreezeToggle" />
-
-                        <TextBlock Text="Inspection" FontSize="13" FontWeight="SemiBold" Margin="0,4,0,8" />
-                        <CheckBox Content="Freeze &amp; Inspect" IsChecked="{Binding IsFreezeInspectMode}" Margin="0,0,0,8" AutomationProperties.AutomationId="FreezeInspectToggle" />
-                        <CheckBox Content="Crosshair" IsChecked="{Binding ShowCrosshair}" Margin="0,0,0,4" AutomationProperties.AutomationId="CrosshairToggle" />
-                        <CheckBox Content="Grid" IsChecked="{Binding ShowGrid}" Margin="0,0,0,4" AutomationProperties.AutomationId="GridToggle" />
-                        <Slider Minimum="8" Maximum="240" TickFrequency="8" Value="{Binding GridSpacingPixels}" AutomationProperties.AutomationId="GridSpacingSlider" />
-                        <CheckBox Content="Rulers" IsChecked="{Binding ShowRulers}" Margin="0,4,0,10" AutomationProperties.AutomationId="RulersToggle" />
-
-                        <TextBlock Text="Annotation tool" FontSize="13" FontWeight="SemiBold" />
-                        <ComboBox ItemsSource="{Binding ToolChoices}" SelectedItem="{Binding CurrentTool}" AutomationProperties.AutomationId="AnnotationToolSelector" />
-                        <TextBlock Text="Color" FontSize="13" FontWeight="SemiBold" />
-                        <ComboBox ItemsSource="{Binding StrokeColors}" SelectedItem="{Binding SelectedStrokeColor}" AutomationProperties.AutomationId="StrokeColorSelector" />
-                        <TextBlock Text="Stroke thickness" FontSize="13" FontWeight="SemiBold" />
-                        <Slider Minimum="1" Maximum="12" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding SelectedStrokeThickness}" AutomationProperties.AutomationId="StrokeThicknessSlider" />
-                        <UniformGrid Columns="3" Margin="0,10,0,14">
-                            <Button Content="Undo" Command="{Binding UndoAnnotationsCommand}" AutomationProperties.AutomationId="UndoAnnotationsButton" />
-                            <Button Content="Redo" Command="{Binding RedoAnnotationsCommand}" AutomationProperties.AutomationId="RedoAnnotationsButton" />
-                            <Button Content="Clear" Command="{Binding ClearAnnotationsCommand}" AutomationProperties.AutomationId="ClearAnnotationsButton" />
-                        </UniformGrid>
-
-                        <TextBlock Text="Calibration" FontSize="13" FontWeight="SemiBold" />
-                        <TextBlock Text="{Binding CalibrationStatus}" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" Margin="0,2,0,8" AutomationProperties.AutomationId="CalibrationStatusText" />
-                        <ComboBox ItemsSource="{Binding VisibleCalibrationProfiles}" SelectedItem="{Binding SelectedCalibrationProfile}" DisplayMemberPath="Name" AutomationProperties.AutomationId="CalibrationProfileSelector" />
-                        <TextBox Text="{Binding CalibrationProfileName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8" AutomationProperties.AutomationId="CalibrationProfileNameTextBox" />
-                        <TextBox Text="{Binding KnownCalibrationLength, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8" AutomationProperties.AutomationId="KnownCalibrationLengthTextBox" />
-                        <ComboBox ItemsSource="{Binding UnitChoices}" SelectedItem="{Binding SelectedUnits}" AutomationProperties.AutomationId="CalibrationUnitsSelector" />
-                        <UniformGrid Columns="3" Margin="0,0,0,14">
-                            <Button Content="Create" Command="{Binding CreateCalibrationProfileCommand}" AutomationProperties.AutomationId="CreateCalibrationProfileButton" />
-                            <Button Content="Rename" Command="{Binding RenameCalibrationProfileCommand}" AutomationProperties.AutomationId="RenameCalibrationProfileButton" />
-                            <Button Content="Delete" Command="{Binding DeleteCalibrationProfileCommand}" AutomationProperties.AutomationId="DeleteCalibrationProfileButton" />
-                        </UniformGrid>
-                        <TextBlock Text="{Binding MeasurementStatus}" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,12" AutomationProperties.AutomationId="MeasurementStatusText" />
-                        <UniformGrid Columns="2" Margin="0,0,0,14">
-                            <Button Content="Save clean" Command="{Binding SaveCleanFrameCommand}" AutomationProperties.AutomationId="SaveCleanFrameButton" />
-                            <Button Content="Save annotated" Click="SaveAnnotatedFrame_Click" AutomationProperties.AutomationId="SaveAnnotatedFrameButton" />
-                            <Button Content="Open inspection" Click="OpenInspection_Click" AutomationProperties.AutomationId="OpenInspectionButton" />
-                            <Button Content="Save JSON" Command="{Binding SaveInspectionSidecarCommand}" AutomationProperties.AutomationId="SaveInspectionSidecarButton" />
-                        </UniformGrid>
-
-                        <Border BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="1" Padding="12" Background="#FAFBFC">
-                            <StackPanel>
-                                <TextBlock Text="Session" FontWeight="SemiBold" />
-                                <TextBlock Text="{Binding CurrentFps, StringFormat=FPS {0:0.0}}" Foreground="{StaticResource MutedTextBrush}" Margin="0,8,0,0" AutomationProperties.AutomationId="FpsReadout" />
-                                <TextBlock Text="{Binding RotationDegrees, StringFormat=Rotation {0} deg}" Foreground="{StaticResource MutedTextBrush}" Margin="0,4,0,0" AutomationProperties.AutomationId="RotationReadout" />
-                                <TextBlock Text="{Binding LastSnapshotPath}" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" Margin="0,10,0,0" AutomationProperties.AutomationId="LastSnapshotPath" />
-                            </StackPanel>
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Control Rail" FontSize="16" FontWeight="SemiBold" />
+                            <TextBlock Text="Camera, session, inspection and export controls" Style="{StaticResource MutedTextStyle}" />
+                        </StackPanel>
+                        <Border Grid.Column="1" Style="{StaticResource StatusBadgeStyle}" Margin="0">
+                            <TextBlock Text="{Binding CurrentFps, StringFormat=FPS {0:0.0}}" Style="{StaticResource MutedTextStyle}" AutomationProperties.AutomationId="FpsReadout" />
                         </Border>
-                    </StackPanel>
-                </ScrollViewer>
+                    </Grid>
+
+                    <TabControl Grid.Row="1">
+                        <TabItem Header="Camera">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,12,0,0">
+                                <StackPanel>
+                                    <Border Style="{StaticResource PanelCardStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="Source" Style="{StaticResource SectionTitleStyle}" />
+                                            <TextBlock Text="Camera" Style="{StaticResource FieldLabelStyle}" />
+                                            <ComboBox ItemsSource="{Binding Cameras}" SelectedItem="{Binding SelectedCamera}" DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="CameraSelector" />
+                                            <TextBlock Text="Resolution / FPS" Style="{StaticResource FieldLabelStyle}" />
+                                            <ComboBox ItemsSource="{Binding Formats}" SelectedItem="{Binding SelectedFormat}" DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="FormatSelector" />
+                                            <UniformGrid Columns="3" Margin="0,8,0,0">
+                                                <Button Content="Start" Command="{Binding StartPreviewCommand}" Style="{StaticResource PrimaryButtonStyle}" AutomationProperties.AutomationId="RailStartPreviewButton" />
+                                                <Button Content="Stop" Command="{Binding StopPreviewCommand}" AutomationProperties.AutomationId="RailStopPreviewButton" />
+                                                <Button Content="Refresh" Command="{Binding RefreshCamerasCommand}" />
+                                            </UniformGrid>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource PanelCardStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="Capture" Style="{StaticResource SectionTitleStyle}" />
+                                            <UniformGrid Columns="2">
+                                                <Button Content="Snapshot" Command="{Binding SnapshotCommand}" AutomationProperties.AutomationId="RailSnapshotButton" />
+                                                <Button Content="Fullscreen" Command="{Binding ToggleFullscreenCommand}" AutomationProperties.AutomationId="RailFullscreenButton" />
+                                            </UniformGrid>
+                                            <TextBlock Text="Snapshot folder" Style="{StaticResource FieldLabelStyle}" />
+                                            <Button Content="Choose folder" Command="{Binding ChooseSnapshotFolderCommand}" AutomationProperties.AutomationId="ChooseSnapshotFolderButton" />
+                                            <TextBlock Text="{Binding SnapshotFolderPath}" TextWrapping="Wrap" Style="{StaticResource MutedTextStyle}" Margin="3,4,3,0" AutomationProperties.AutomationId="SnapshotFolderPathText" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource PanelCardStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="View" Style="{StaticResource SectionTitleStyle}" />
+                                            <UniformGrid Columns="3">
+                                                <Button Content="-" Command="{Binding ZoomOutCommand}" AutomationProperties.AutomationId="ZoomOutButton" />
+                                                <Button Content="+" Command="{Binding ZoomInCommand}" AutomationProperties.AutomationId="ZoomInButton" />
+                                                <Button Content="Reset" Command="{Binding ResetViewCommand}" AutomationProperties.AutomationId="ResetViewButton" />
+                                            </UniformGrid>
+                                            <Slider Minimum="0.25" Maximum="4" TickFrequency="0.25" Value="{Binding ZoomLevel}" AutomationProperties.AutomationId="ZoomSlider" />
+                                            <TextBlock Text="{Binding ZoomLevel, StringFormat=Zoom {0:0.00}x}" Style="{StaticResource MutedTextStyle}" AutomationProperties.AutomationId="ZoomReadout" />
+                                            <UniformGrid Columns="2" Margin="0,10,0,2">
+                                                <Button Content="Rotate Left" Command="{Binding RotateLeftCommand}" AutomationProperties.AutomationId="RotateLeftButton" />
+                                                <Button Content="Rotate Right" Command="{Binding RotateRightCommand}" AutomationProperties.AutomationId="RotateRightButton" />
+                                            </UniformGrid>
+                                            <CheckBox Content="Mirror horizontal" IsChecked="{Binding IsMirrored}" AutomationProperties.AutomationId="MirrorToggle" />
+                                            <CheckBox Content="Freeze preview" IsChecked="{Binding IsFrozen}" AutomationProperties.AutomationId="FreezeToggle" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+
+                        <TabItem Header="Session">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,12,0,0">
+                                <StackPanel>
+                                    <Border Style="{StaticResource PanelCardStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="Session Commands" Style="{StaticResource SectionTitleStyle}" />
+                                            <UniformGrid Columns="2">
+                                                <Button Content="New" Command="{Binding NewSessionCommand}" AutomationProperties.AutomationId="NewSessionButton" />
+                                                <Button Content="Save" Command="{Binding SaveSessionCommand}" Style="{StaticResource PrimaryButtonStyle}" AutomationProperties.AutomationId="SaveSessionButton" />
+                                                <Button Content="Save As" Command="{Binding SaveSessionAsCommand}" AutomationProperties.AutomationId="SaveSessionAsButton" />
+                                                <Button Content="Open" Click="OpenSession_Click" AutomationProperties.AutomationId="OpenSessionButton" />
+                                            </UniformGrid>
+                                            <TextBlock Text="Recent sessions" Style="{StaticResource FieldLabelStyle}" />
+                                            <ComboBox ItemsSource="{Binding RecentSessions}" SelectedItem="{Binding SelectedRecentSession}" DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="RecentSessionsSelector" />
+                                            <Button Content="Open recent" Command="{Binding OpenRecentSessionCommand}" AutomationProperties.AutomationId="OpenRecentSessionButton" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource PanelCardStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="Metadata" Style="{StaticResource SectionTitleStyle}" />
+                                            <TextBlock Text="Project name" Style="{StaticResource FieldLabelStyle}" />
+                                            <TextBox Text="{Binding SessionName, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="SessionNameTextBox" />
+                                            <TextBlock Text="Customer" Style="{StaticResource FieldLabelStyle}" />
+                                            <TextBox Text="{Binding CustomerName, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="CustomerNameTextBox" />
+                                            <TextBlock Text="Device model" Style="{StaticResource FieldLabelStyle}" />
+                                            <TextBox Text="{Binding DeviceModel, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="DeviceModelTextBox" />
+                                            <TextBlock Text="Serial / asset tag" Style="{StaticResource FieldLabelStyle}" />
+                                            <TextBox Text="{Binding SerialAssetTag, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="SerialAssetTagTextBox" />
+                                            <TextBlock Text="Technician" Style="{StaticResource FieldLabelStyle}" />
+                                            <TextBox Text="{Binding TechnicianName, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="TechnicianNameTextBox" />
+                                            <TextBlock Text="Job / order number" Style="{StaticResource FieldLabelStyle}" />
+                                            <TextBox Text="{Binding JobOrderNumber, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="JobOrderNumberTextBox" />
+                                            <TextBlock Text="Notes" Style="{StaticResource FieldLabelStyle}" />
+                                            <TextBox Text="{Binding SessionNotes, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" Height="82" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" AutomationProperties.AutomationId="SessionNotesTextBox" />
+                                            <TextBlock Text="{Binding CurrentSessionFolderPath}" TextWrapping="Wrap" Style="{StaticResource MutedTextStyle}" Margin="3,10,3,0" AutomationProperties.AutomationId="CurrentSessionFolderText" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+
+                        <TabItem Header="Inspect">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,12,0,0">
+                                <StackPanel>
+                                    <Border Style="{StaticResource PanelCardStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="Overlay" Style="{StaticResource SectionTitleStyle}" />
+                                            <CheckBox Content="Freeze &amp; Inspect" IsChecked="{Binding IsFreezeInspectMode}" AutomationProperties.AutomationId="FreezeInspectToggle" />
+                                            <CheckBox Content="Crosshair" IsChecked="{Binding ShowCrosshair}" AutomationProperties.AutomationId="CrosshairToggle" />
+                                            <CheckBox Content="Grid" IsChecked="{Binding ShowGrid}" AutomationProperties.AutomationId="GridToggle" />
+                                            <Slider Minimum="8" Maximum="240" TickFrequency="8" Value="{Binding GridSpacingPixels}" AutomationProperties.AutomationId="GridSpacingSlider" />
+                                            <CheckBox Content="Rulers" IsChecked="{Binding ShowRulers}" AutomationProperties.AutomationId="RulersToggle" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource PanelCardStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="Annotations" Style="{StaticResource SectionTitleStyle}" />
+                                            <TextBlock Text="Annotation tool" Style="{StaticResource FieldLabelStyle}" />
+                                            <ComboBox ItemsSource="{Binding ToolChoices}" SelectedItem="{Binding CurrentTool}" AutomationProperties.AutomationId="AnnotationToolSelector" />
+                                            <TextBlock Text="Color" Style="{StaticResource FieldLabelStyle}" />
+                                            <ComboBox ItemsSource="{Binding StrokeColors}" SelectedItem="{Binding SelectedStrokeColor}" AutomationProperties.AutomationId="StrokeColorSelector" />
+                                            <TextBlock Text="Stroke thickness" Style="{StaticResource FieldLabelStyle}" />
+                                            <Slider Minimum="1" Maximum="12" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding SelectedStrokeThickness}" AutomationProperties.AutomationId="StrokeThicknessSlider" />
+                                            <UniformGrid Columns="3" Margin="0,10,0,0">
+                                                <Button Content="Undo" Command="{Binding UndoAnnotationsCommand}" AutomationProperties.AutomationId="UndoAnnotationsButton" />
+                                                <Button Content="Redo" Command="{Binding RedoAnnotationsCommand}" AutomationProperties.AutomationId="RedoAnnotationsButton" />
+                                                <Button Content="Clear" Command="{Binding ClearAnnotationsCommand}" Style="{StaticResource DangerButtonStyle}" AutomationProperties.AutomationId="ClearAnnotationsButton" />
+                                            </UniformGrid>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource PanelCardStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="Inspection Saves" Style="{StaticResource SectionTitleStyle}" />
+                                            <UniformGrid Columns="2">
+                                                <Button Content="Save clean" Command="{Binding SaveCleanFrameCommand}" AutomationProperties.AutomationId="SaveCleanFrameButton" />
+                                                <Button Content="Save annotated" Click="SaveAnnotatedFrame_Click" AutomationProperties.AutomationId="SaveAnnotatedFrameButton" />
+                                                <Button Content="Open inspection" Click="OpenInspection_Click" AutomationProperties.AutomationId="OpenInspectionButton" />
+                                                <Button Content="Save JSON" Command="{Binding SaveInspectionSidecarCommand}" AutomationProperties.AutomationId="SaveInspectionSidecarButton" />
+                                            </UniformGrid>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+
+                        <TabItem Header="Calibration">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,12,0,0">
+                                <StackPanel>
+                                    <Border Style="{StaticResource PanelCardStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="Calibration Profile" Style="{StaticResource SectionTitleStyle}" />
+                                            <Border Style="{StaticResource StatusBadgeStyle}" Margin="0,0,0,10">
+                                                <TextBlock Text="{Binding CalibrationStatus}" TextWrapping="Wrap" AutomationProperties.AutomationId="CalibrationStatusText" />
+                                            </Border>
+                                            <TextBlock Text="Profile" Style="{StaticResource FieldLabelStyle}" />
+                                            <ComboBox ItemsSource="{Binding VisibleCalibrationProfiles}" SelectedItem="{Binding SelectedCalibrationProfile}" DisplayMemberPath="Name" AutomationProperties.AutomationId="CalibrationProfileSelector" />
+                                            <TextBlock Text="Profile name" Style="{StaticResource FieldLabelStyle}" />
+                                            <TextBox Text="{Binding CalibrationProfileName, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="CalibrationProfileNameTextBox" />
+                                            <TextBlock Text="Known length" Style="{StaticResource FieldLabelStyle}" />
+                                            <TextBox Text="{Binding KnownCalibrationLength, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="KnownCalibrationLengthTextBox" />
+                                            <TextBlock Text="Units" Style="{StaticResource FieldLabelStyle}" />
+                                            <ComboBox ItemsSource="{Binding UnitChoices}" SelectedItem="{Binding SelectedUnits}" AutomationProperties.AutomationId="CalibrationUnitsSelector" />
+                                            <UniformGrid Columns="3" Margin="0,10,0,0">
+                                                <Button Content="Create" Command="{Binding CreateCalibrationProfileCommand}" Style="{StaticResource PrimaryButtonStyle}" AutomationProperties.AutomationId="CreateCalibrationProfileButton" />
+                                                <Button Content="Rename" Command="{Binding RenameCalibrationProfileCommand}" AutomationProperties.AutomationId="RenameCalibrationProfileButton" />
+                                                <Button Content="Delete" Command="{Binding DeleteCalibrationProfileCommand}" Style="{StaticResource DangerButtonStyle}" AutomationProperties.AutomationId="DeleteCalibrationProfileButton" />
+                                            </UniformGrid>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource PanelCardStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="Measurement" Style="{StaticResource SectionTitleStyle}" />
+                                            <TextBlock Text="{Binding MeasurementStatus}" TextWrapping="Wrap" AutomationProperties.AutomationId="MeasurementStatusText" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+
+                        <TabItem Header="Export">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,12,0,0">
+                                <StackPanel>
+                                    <Border Style="{StaticResource PanelCardStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="HTML Report" Style="{StaticResource SectionTitleStyle}" />
+                                            <UniformGrid Columns="2">
+                                                <Button Content="Export HTML Report" Command="{Binding ExportHtmlReportCommand}" Style="{StaticResource PrimaryButtonStyle}" AutomationProperties.AutomationId="ExportHtmlReportButton" />
+                                                <Button Content="Open Last Report" Command="{Binding OpenLastReportCommand}" AutomationProperties.AutomationId="OpenLastReportButton" />
+                                            </UniformGrid>
+                                            <TextBlock Text="Last report" Style="{StaticResource FieldLabelStyle}" />
+                                            <TextBlock Text="{Binding LastReportPath}" TextWrapping="Wrap" Style="{StaticResource MutedTextStyle}" AutomationProperties.AutomationId="LastReportPathText" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource PanelCardStyle}">
+                                        <StackPanel>
+                                            <TextBlock Text="Artifacts" Style="{StaticResource SectionTitleStyle}" />
+                                            <TextBlock Text="{Binding LastSnapshotPath}" TextWrapping="Wrap" Style="{StaticResource MutedTextStyle}" AutomationProperties.AutomationId="LastSnapshotPath" />
+                                            <TextBlock Text="{Binding RotationDegrees, StringFormat=Rotation {0} deg}" Style="{StaticResource MutedTextStyle}" Margin="0,8,0,0" AutomationProperties.AutomationId="RotationReadout" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+                    </TabControl>
+                </Grid>
             </Border>
 
-            <Grid x:Name="PreviewHost" Grid.Column="1" Background="#202326" ClipToBounds="True" AutomationProperties.AutomationId="PreviewHost">
-                <Viewbox Stretch="Uniform" AutomationProperties.AutomationId="PreviewViewbox">
-                    <Viewbox.RenderTransform>
-                        <ScaleTransform ScaleX="{Binding ZoomLevel}" ScaleY="{Binding ZoomLevel}" />
-                    </Viewbox.RenderTransform>
-                    <Viewbox.RenderTransformOrigin>0.5,0.5</Viewbox.RenderTransformOrigin>
-                    <Grid Width="{Binding PreviewWidth}" Height="{Binding PreviewHeight}">
-                        <Image Source="{Binding PreviewFrame}" Stretch="None" IsHitTestVisible="False" RenderOptions.BitmapScalingMode="HighQuality" AutomationProperties.AutomationId="LivePreviewImage" />
-                        <controls:InspectionOverlayControl
-                            Panel.ZIndex="1"
-                            Width="{Binding PreviewWidth}"
-                            Height="{Binding PreviewHeight}"
-                            Annotations="{Binding Annotations}"
-                            CurrentTool="{Binding CurrentTool}"
-                            StrokeColor="{Binding SelectedStrokeColor}"
-                            StrokeThickness="{Binding SelectedStrokeThickness}"
-                            ShowCrosshair="{Binding ShowCrosshair}"
-                            ShowGrid="{Binding ShowGrid}"
-                            GridSpacingPixels="{Binding GridSpacingPixels}"
-                            ShowRulers="{Binding ShowRulers}"
-                            CaptureHistoryCommand="{Binding CaptureAnnotationHistoryCommand}"
-                            AutomationProperties.AutomationId="InspectionOverlayCanvas" />
+            <Border Grid.Column="2" Background="#070B10" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="1" CornerRadius="7" ClipToBounds="True">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="42" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Border Background="#0E151D" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="0,0,0,1" Padding="14,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Live Preview" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border Style="{StaticResource StatusBadgeStyle}">
+                                    <TextBlock Text="{Binding ZoomLevel, StringFormat=Zoom {0:0.00}x}" Style="{StaticResource MutedTextStyle}" />
+                                </Border>
+                                <Border Style="{StaticResource StatusBadgeStyle}">
+                                    <TextBlock Text="{Binding RotationDegrees, StringFormat=Rotation {0} deg}" Style="{StaticResource MutedTextStyle}" />
+                                </Border>
+                                <Border Style="{StaticResource StatusBadgeStyle}" Margin="0">
+                                    <TextBlock Text="{Binding MeasurementStatus}" Style="{StaticResource MutedTextStyle}" />
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <Grid x:Name="PreviewHost" Grid.Row="1" ClipToBounds="True" AutomationProperties.AutomationId="PreviewHost">
+                        <Grid.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#171D23" Offset="0" />
+                                <GradientStop Color="#0B1015" Offset="1" />
+                            </LinearGradientBrush>
+                        </Grid.Background>
+                        <Viewbox Stretch="Uniform" AutomationProperties.AutomationId="PreviewViewbox">
+                            <Viewbox.RenderTransform>
+                                <ScaleTransform ScaleX="{Binding ZoomLevel}" ScaleY="{Binding ZoomLevel}" />
+                            </Viewbox.RenderTransform>
+                            <Viewbox.RenderTransformOrigin>0.5,0.5</Viewbox.RenderTransformOrigin>
+                            <Grid Width="{Binding PreviewWidth}" Height="{Binding PreviewHeight}">
+                                <Image Source="{Binding PreviewFrame}" Stretch="None" IsHitTestVisible="False" RenderOptions.BitmapScalingMode="HighQuality" AutomationProperties.AutomationId="LivePreviewImage" />
+                                <controls:InspectionOverlayControl
+                                    Panel.ZIndex="1"
+                                    Width="{Binding PreviewWidth}"
+                                    Height="{Binding PreviewHeight}"
+                                    Annotations="{Binding Annotations}"
+                                    CurrentTool="{Binding CurrentTool}"
+                                    StrokeColor="{Binding SelectedStrokeColor}"
+                                    StrokeThickness="{Binding SelectedStrokeThickness}"
+                                    ShowCrosshair="{Binding ShowCrosshair}"
+                                    ShowGrid="{Binding ShowGrid}"
+                                    GridSpacingPixels="{Binding GridSpacingPixels}"
+                                    ShowRulers="{Binding ShowRulers}"
+                                    CaptureHistoryCommand="{Binding CaptureAnnotationHistoryCommand}"
+                                    AutomationProperties.AutomationId="InspectionOverlayCanvas" />
+                            </Grid>
+                        </Viewbox>
                     </Grid>
-                </Viewbox>
-            </Grid>
+                </Grid>
+            </Border>
         </Grid>
 
-        <Border Grid.Row="2" Background="#FFFFFF" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="0,1,0,0" Padding="14,0">
-            <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" Foreground="{StaticResource MutedTextBrush}" AutomationProperties.AutomationId="StatusText" />
+        <Border Grid.Row="3" Background="#0D131A" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="0,1,0,0" Padding="18,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Border Style="{StaticResource StatusBadgeStyle}" Padding="8,3" Margin="0,0,10,0">
+                    <TextBlock Text="STATUS" Style="{StaticResource MutedTextStyle}" />
+                </Border>
+                <TextBlock Grid.Column="1" Text="{Binding StatusMessage}" VerticalAlignment="Center" Foreground="{StaticResource MutedTextBrush}" TextTrimming="CharacterEllipsis" AutomationProperties.AutomationId="StatusText" />
+                <TextBlock Grid.Column="2" Text="{Binding CurrentSessionFolderPath}" VerticalAlignment="Center" Foreground="{StaticResource MutedTextBrush}" FontSize="12" TextTrimming="CharacterEllipsis" MaxWidth="520" />
+            </Grid>
         </Border>
     </Grid>
 </Window>
+

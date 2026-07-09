@@ -70,6 +70,11 @@ Covered by unit tests:
 22. Confirm the saved session appears in Recent Sessions and can be reopened from the recent-session selector.
 23. Export an HTML report and confirm `reports/report-YYYYMMDD-HHMMSS.html` is created under the session folder.
 24. Open the report locally and confirm metadata, notes, calibration status/profile, clean image, annotated image, text annotation, angle measurement, and generated timestamp are readable offline.
+25. Confirm the Phase 3C dark theme uses consistent button, input, combo box, tab, panel, status badge, and status-bar styling.
+26. Confirm the control rail is grouped into Camera, Session, Inspect, Calibration, and Export tabs and no longer reads as one long unstructured form.
+27. Confirm the session header clearly shows project context, camera/format state, calibration state, session save state, and report state where space permits.
+28. Confirm text does not overlap or clip in the default window, maximized window, and fullscreen preview workflow.
+29. Confirm the updated full-window screenshot under `docs/screenshots` reflects the current premium UI.
 
 To force Demo Mode on machines that have a webcam attached:
 
@@ -78,6 +83,6 @@ $env:USB_MICROSCOPE_STUDIO_DEMO_ONLY = "1"
 dotnet run --project src/UsbMicroscopeStudio/UsbMicroscopeStudio.csproj
 ```
 
-## Phase 3B Constraints
+## Phase 3C Constraints
 
-Recording, PDF reports, payments, licensing, Store packaging, release packaging, and a full UI redesign are intentionally not tested because they are not part of Phase 3B.
+Recording, PDF reports, payments, licensing, Store packaging, release packaging, and new inspection features are intentionally not tested because they are not part of Phase 3C.

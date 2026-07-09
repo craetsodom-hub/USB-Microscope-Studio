@@ -2,17 +2,27 @@
 
 ## UI Direction
 
-The interface is built for technicians who repeatedly inspect live video, not for marketing presentation. It uses a restrained neutral palette, compact controls, visible status text, and a large preview area.
+The interface is built for technicians who repeatedly inspect live video, not for marketing presentation. Phase 3C moves the app to a premium dark graphite visual system with high-contrast preview, compact command surfaces, subtle borders, aligned inputs, and status badges that read like professional camera, lab, and inspection software.
 
 ## Layout
 
-- Top command bar: refresh, start, stop, snapshot, fullscreen.
-- Left control rail: camera, format, capture actions, snapshot folder selector, zoom, rotate, mirror, freeze, session readouts.
+- Top command bar: app identity plus compact refresh, start, stop, snapshot, and fullscreen actions.
+- Session header: project name, customer/device/camera/format badges, plus calibration, session file, and report state when space allows.
+- Left control rail: grouped tabs for Camera, Session, Inspect, Calibration, and Export instead of one long form.
 - Phase 3A adds compact session actions and metadata fields to the existing rail without a full redesign.
 - Phase 3B adds compact report actions to the session area without changing the overall layout.
+- Phase 3C reorganizes those controls into technician-focused sections while preserving existing bindings and automation IDs.
 - Inspection controls: Freeze & Inspect, crosshair, grid spacing, rulers, annotation tool, color, stroke thickness, undo/redo/clear, calibration profile management, and inspection saves.
-- Main workspace: high-contrast preview area with scroll support when zoomed.
-- Bottom status bar: current camera/preview state and reconnect messages.
+- Main workspace: dominant high-contrast microscope preview with a framed preview header and inspection state badges.
+- Bottom status bar: professional status strip for current camera/preview state, reconnect messages, and active session folder.
+
+## Visual System
+
+- Palette: graphite surfaces, dark elevated panels, blue command focus, green inspection accent, muted blue-gray secondary text, and restrained warning/danger colors.
+- Controls: reusable WPF styles for buttons, compact command buttons, panels, text boxes, combo boxes, tab headers, and status badges.
+- Inputs: compact, aligned labels and fields designed for repeated technician entry rather than large marketing forms.
+- Buttons: consistent dark templates with clear hover/pressed/disabled states. Header actions use a compact command style; rail actions retain larger touch targets.
+- Panels: 6px corner radius maximum, subtle borders, no glassmorphism, no decorative gradients, no oversized hero treatment.
 
 ## Interaction Notes
 
