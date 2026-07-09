@@ -1,10 +1,23 @@
 # Product
 
-## Phase 2 Goal
+## Phase 3A Goal
+
+Turn the inspection workflow into a session-based technician product foundation. Phase 3A adds inspection project/session management and customer/device metadata while preserving the Phase 1 camera workflow and Phase 2 inspection tools.
+
+## Phase 3A Included
+
+- Inspection sessions with project name, customer, device model, serial/asset tag, technician, job/order number, notes, and inspection date/time.
+- Session folder structure under a selected workspace: date plus safe session name, with `clean-frames`, `annotated-frames`, and `sidecars`.
+- New Session, Save Session, Save Session As, Open Session, and Recent Sessions.
+- Session JSON persistence for metadata, clean frame path, annotated frame path, inspection JSON sidecar path, calibration status/profile reference, annotations, and measurements.
+- Existing Phase 2 save flows continue to work: Save clean, Save annotated, Save JSON, Open inspection.
+- Recent session persistence in app data.
+
+## Phase 2 Foundation
 
 Build a reliable technician-focused Windows app for USB/UVC microscope inspection. Phase 2 adds non-destructive inspection overlays, annotations, calibration, and measurement workflows on top of the Phase 1 live preview foundation.
 
-## Included
+## Included Foundation
 
 - Detect USB/UVC video devices.
 - Select camera source.
@@ -26,13 +39,15 @@ Build a reliable technician-focused Windows app for USB/UVC microscope inspectio
 - Freeze & Inspect mode plus clean-frame, annotated-frame, JSON sidecar save, and open-inspection workflows.
 - Annotated PNG export at native frame dimensions, independent of current UI zoom, letterboxing, fullscreen state, or taskbar content.
 
-## Excluded From Phase 2
+## Excluded From Phase 3A
 
 - Recording.
 - PDF reports.
+- HTML reports.
 - Payments.
 - Licensing.
 - Microsoft Store packaging.
+- Full UI redesign.
 
 ## Primary User
 

@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using UsbMicroscopeStudio.Models;
 using UsbMicroscopeStudio.Models.Inspection;
+using UsbMicroscopeStudio.Models.Sessions;
 using UsbMicroscopeStudio.Services;
 
 namespace UsbMicroscopeStudio.ViewModels;
@@ -22,6 +23,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly CalibrationCalculator _calibrationCalculator = new();
     private readonly AnnotationHistory _annotationHistory = new();
     private readonly AnnotationSerializer _annotationSerializer;
+    private readonly InspectionSessionStore _sessionStore;
+    private readonly IRecentSessionStore _recentSessionStore;
     private readonly SemaphoreSlim _previewGate = new(1, 1);
     private int _formatLoadRequestId;
     private int _previewStartRequestId;
@@ -37,7 +40,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         IFolderPickerService folderPickerService,
         IUiDispatcher uiDispatcher,
         ICalibrationProfileStore? calibrationProfileStore = null,
-        AnnotationSerializer? annotationSerializer = null)
+        AnnotationSerializer? annotationSerializer = null,
+        InspectionSessionStore? sessionStore = null,
+        IRecentSessionStore? recentSessionStore = null)
     {
         _cameraCatalog = cameraCatalog;
         _previewService = previewService;
@@ -47,6 +52,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _uiDispatcher = uiDispatcher;
         _calibrationProfileStore = calibrationProfileStore ?? new JsonCalibrationProfileStore();
         _annotationSerializer = annotationSerializer ?? new AnnotationSerializer();
+        _sessionStore = sessionStore ?? new InspectionSessionStore();
+        _recentSessionStore = recentSessionStore ?? new JsonRecentSessionStore();
 
         _previewService.FrameReady += OnFrameReady;
         _previewService.StatusChanged += OnStatusChanged;
@@ -61,6 +68,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             CalibrationProfiles.Add(profile);
         }
+
+        foreach (var session in _recentSessionStore.Load())
+        {
+            RecentSessions.Add(session);
+        }
     }
 
     public ObservableCollection<CameraDevice> Cameras { get; } = [];
@@ -72,6 +84,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public ObservableCollection<CalibrationProfile> CalibrationProfiles { get; } = [];
 
     public ObservableCollection<CalibrationProfile> VisibleCalibrationProfiles { get; } = [];
+
+    public ObservableCollection<RecentSessionEntry> RecentSessions { get; } = [];
 
     public IReadOnlyList<InspectionTool> ToolChoices { get; } =
     [
@@ -129,6 +143,48 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private string snapshotFolderPath = string.Empty;
+
+    [ObservableProperty]
+    private string sessionName = "Untitled inspection";
+
+    [ObservableProperty]
+    private string customerName = string.Empty;
+
+    [ObservableProperty]
+    private string deviceModel = string.Empty;
+
+    [ObservableProperty]
+    private string serialAssetTag = string.Empty;
+
+    [ObservableProperty]
+    private string technicianName = string.Empty;
+
+    [ObservableProperty]
+    private string jobOrderNumber = string.Empty;
+
+    [ObservableProperty]
+    private string sessionNotes = string.Empty;
+
+    [ObservableProperty]
+    private DateTimeOffset inspectionDateTime = DateTimeOffset.Now;
+
+    [ObservableProperty]
+    private string workspaceFolderPath = string.Empty;
+
+    [ObservableProperty]
+    private string? currentSessionFolderPath;
+
+    [ObservableProperty]
+    private string? currentSessionJsonPath;
+
+    [ObservableProperty]
+    private string? annotatedFramePath;
+
+    [ObservableProperty]
+    private string? inspectionJsonSidecarPath;
+
+    [ObservableProperty]
+    private RecentSessionEntry? selectedRecentSession;
 
     [ObservableProperty]
     private InspectionTool currentTool = InspectionTool.Select;
@@ -396,6 +452,65 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
+    public void NewSession()
+    {
+        SessionName = "Untitled inspection";
+        CustomerName = string.Empty;
+        DeviceModel = string.Empty;
+        SerialAssetTag = string.Empty;
+        TechnicianName = string.Empty;
+        JobOrderNumber = string.Empty;
+        SessionNotes = string.Empty;
+        InspectionDateTime = DateTimeOffset.Now;
+        WorkspaceFolderPath = string.Empty;
+        CurrentSessionFolderPath = null;
+        CurrentSessionJsonPath = null;
+        LastSnapshotPath = null;
+        AnnotatedFramePath = null;
+        InspectionJsonSidecarPath = null;
+        Annotations.Clear();
+        SelectedCalibrationProfile = null;
+        StatusMessage = "New inspection session";
+    }
+
+    [RelayCommand]
+    public void SaveSession()
+    {
+        if (string.IsNullOrWhiteSpace(WorkspaceFolderPath))
+        {
+            SaveSessionAs();
+            return;
+        }
+
+        SaveSessionToWorkspace(WorkspaceFolderPath);
+    }
+
+    [RelayCommand]
+    public void SaveSessionAs()
+    {
+        var initialFolder = string.IsNullOrWhiteSpace(WorkspaceFolderPath) ? SnapshotFolderPath : WorkspaceFolderPath;
+        var selectedFolder = _folderPickerService.PickFolder(initialFolder);
+        if (string.IsNullOrWhiteSpace(selectedFolder))
+        {
+            return;
+        }
+
+        CurrentSessionFolderPath = null;
+        SaveSessionToWorkspace(selectedFolder);
+    }
+
+    [RelayCommand]
+    public void OpenRecentSession()
+    {
+        if (SelectedRecentSession is null || string.IsNullOrWhiteSpace(SelectedRecentSession.SessionPath))
+        {
+            return;
+        }
+
+        OpenSession(SelectedRecentSession.SessionPath);
+    }
+
+    [RelayCommand]
     public void CaptureAnnotationHistory()
     {
         _annotationHistory.Capture(Annotations);
@@ -498,23 +613,36 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     public void SaveCleanFrame()
     {
+        var cleanFramesFolder = GetCleanFramesFolderPath();
+        if (!string.IsNullOrWhiteSpace(cleanFramesFolder))
+        {
+            SnapshotFolderPath = cleanFramesFolder;
+        }
+
         Snapshot();
     }
 
     [RelayCommand]
     public void SaveInspectionSidecar()
     {
-        var sidecarPath = Path.Combine(SnapshotFolderPath, $"inspection-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.json");
+        var sidecarFolder = GetSidecarsFolderPath() ?? SnapshotFolderPath;
+        var sidecarPath = Path.Combine(sidecarFolder, $"inspection-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.json");
         var document = CreateInspectionDocument(LastSnapshotPath, null);
         _annotationSerializer.Save(sidecarPath, document);
+        InspectionJsonSidecarPath = sidecarPath;
         StatusMessage = $"Inspection sidecar saved: {sidecarPath}";
     }
 
     public void SaveInspectionSidecarForAnnotatedFrame(string annotatedFramePath)
     {
-        var sidecarPath = Path.ChangeExtension(annotatedFramePath, ".json");
+        AnnotatedFramePath = annotatedFramePath;
+        var sidecarFolder = GetSidecarsFolderPath();
+        var sidecarPath = string.IsNullOrWhiteSpace(sidecarFolder)
+            ? Path.ChangeExtension(annotatedFramePath, ".json")
+            : Path.Combine(sidecarFolder, $"{Path.GetFileNameWithoutExtension(annotatedFramePath)}.json");
         var document = CreateInspectionDocument(LastSnapshotPath, annotatedFramePath);
         _annotationSerializer.Save(sidecarPath, document);
+        InspectionJsonSidecarPath = sidecarPath;
         StatusMessage = $"Annotated frame saved: {annotatedFramePath}";
     }
 
@@ -562,6 +690,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         UpdateMeasurementStatus();
         StatusMessage = $"Inspection opened: {sidecarPath}";
+    }
+
+    public string GetAnnotatedFrameFolderPath() => GetAnnotatedFramesFolderPath() ?? SnapshotFolderPath;
+
+    public void OpenSession(string sessionPath)
+    {
+        var session = _sessionStore.Load(sessionPath);
+        ApplySession(session);
+        AddRecentSession(session.SessionName, sessionPath);
+        StatusMessage = $"Session opened: {sessionPath}";
     }
 
     public void Dispose()
@@ -708,6 +846,159 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 : _calibrationCalculator.MeasureDistance(annotation.Points[0], annotation.Points[^1], PreviewWidth, PreviewHeight, ActiveCalibrationProfile()))
             .ToList()
     };
+
+    private InspectionSessionDocument CreateSessionDocument(string workspaceFolder)
+    {
+        var inspection = CreateInspectionDocument(LastSnapshotPath, AnnotatedFramePath);
+        return new InspectionSessionDocument
+        {
+            SessionName = string.IsNullOrWhiteSpace(SessionName) ? "Untitled inspection" : SessionName,
+            CustomerName = CustomerName,
+            DeviceModel = DeviceModel,
+            SerialAssetTag = SerialAssetTag,
+            TechnicianName = TechnicianName,
+            JobOrderNumber = JobOrderNumber,
+            Notes = SessionNotes,
+            InspectionDateTime = InspectionDateTime,
+            WorkspaceFolderPath = workspaceFolder,
+            SessionFolderPath = CurrentSessionFolderPath,
+            CleanFramePath = inspection.CleanFramePath,
+            AnnotatedFramePath = inspection.AnnotatedFramePath,
+            InspectionJsonSidecarPath = InspectionJsonSidecarPath,
+            CalibrationStatus = inspection.CalibrationStatus,
+            CalibrationProfileKey = inspection.CalibrationProfile?.ProfileKey,
+            CalibrationProfile = inspection.CalibrationProfile,
+            Annotations = inspection.Annotations,
+            Measurements = inspection.Measurements
+        };
+    }
+
+    private void SaveSessionToWorkspace(string workspaceFolder)
+    {
+        try
+        {
+            var saved = _sessionStore.Save(CreateSessionDocument(workspaceFolder), workspaceFolder);
+            ApplySessionPaths(saved);
+            AddRecentSession(saved.SessionName, saved.InspectionJsonSidecarPath ?? CurrentSessionJsonPath ?? string.Empty);
+            StatusMessage = $"Session saved: {CurrentSessionJsonPath}";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Session save failed: {ex.Message}";
+        }
+    }
+
+    private void ApplySession(InspectionSessionDocument session)
+    {
+        SessionName = session.SessionName;
+        CustomerName = session.CustomerName ?? string.Empty;
+        DeviceModel = session.DeviceModel ?? string.Empty;
+        SerialAssetTag = session.SerialAssetTag ?? string.Empty;
+        TechnicianName = session.TechnicianName ?? string.Empty;
+        JobOrderNumber = session.JobOrderNumber ?? string.Empty;
+        SessionNotes = session.Notes ?? string.Empty;
+        InspectionDateTime = session.InspectionDateTime;
+        LastSnapshotPath = session.CleanFramePath;
+        AnnotatedFramePath = session.AnnotatedFramePath;
+        InspectionJsonSidecarPath = session.InspectionJsonSidecarPath;
+
+        ApplySessionPaths(session);
+
+        Annotations.Clear();
+        foreach (var annotation in session.Annotations)
+        {
+            Annotations.Add(annotation);
+        }
+
+        if (!string.IsNullOrWhiteSpace(session.CleanFramePath) && File.Exists(session.CleanFramePath))
+        {
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.UriSource = new Uri(session.CleanFramePath, UriKind.Absolute);
+            bitmap.EndInit();
+            bitmap.Freeze();
+            PreviewFrame = bitmap;
+            PreviewWidth = bitmap.PixelWidth;
+            PreviewHeight = bitmap.PixelHeight;
+        }
+
+        if (session.CalibrationProfile is not null && MatchesCurrentCameraFormat(session.CalibrationProfile))
+        {
+            var existing = CalibrationProfiles.FirstOrDefault(profile => profile.ProfileKey == session.CalibrationProfile.ProfileKey);
+            if (existing is null)
+            {
+                CalibrationProfiles.Add(session.CalibrationProfile);
+                existing = session.CalibrationProfile;
+                SaveCalibrationProfiles();
+            }
+
+            RefreshMatchingCalibrationProfiles();
+            SelectedCalibrationProfile = existing;
+        }
+        else
+        {
+            SelectedCalibrationProfile = null;
+            CalibrationStatus = session.CalibrationStatus;
+            UpdateMeasurementStatus();
+        }
+    }
+
+    private void ApplySessionPaths(InspectionSessionDocument session)
+    {
+        WorkspaceFolderPath = session.WorkspaceFolderPath ?? WorkspaceFolderPath;
+        CurrentSessionFolderPath = session.SessionFolderPath;
+        CurrentSessionJsonPath = session.InspectionJsonSidecarPath;
+        if (!string.IsNullOrWhiteSpace(CurrentSessionFolderPath))
+        {
+            var paths = _sessionStore.EnsureSessionFolders(CurrentSessionFolderPath);
+            CurrentSessionJsonPath = paths.SessionJsonPath;
+            SnapshotFolderPath = paths.CleanFramesFolder;
+        }
+    }
+
+    private string? GetCleanFramesFolderPath() =>
+        string.IsNullOrWhiteSpace(CurrentSessionFolderPath)
+            ? null
+            : _sessionStore.EnsureSessionFolders(CurrentSessionFolderPath).CleanFramesFolder;
+
+    private string? GetAnnotatedFramesFolderPath() =>
+        string.IsNullOrWhiteSpace(CurrentSessionFolderPath)
+            ? null
+            : _sessionStore.EnsureSessionFolders(CurrentSessionFolderPath).AnnotatedFramesFolder;
+
+    private string? GetSidecarsFolderPath() =>
+        string.IsNullOrWhiteSpace(CurrentSessionFolderPath)
+            ? null
+            : _sessionStore.EnsureSessionFolders(CurrentSessionFolderPath).SidecarsFolder;
+
+    private void AddRecentSession(string sessionName, string sessionPath)
+    {
+        if (string.IsNullOrWhiteSpace(sessionPath))
+        {
+            return;
+        }
+
+        var existing = RecentSessions.FirstOrDefault(session => string.Equals(session.SessionPath, sessionPath, StringComparison.OrdinalIgnoreCase));
+        if (existing is not null)
+        {
+            RecentSessions.Remove(existing);
+        }
+
+        RecentSessions.Insert(0, new RecentSessionEntry
+        {
+            SessionName = string.IsNullOrWhiteSpace(sessionName) ? "Untitled inspection" : sessionName,
+            SessionPath = sessionPath,
+            LastOpenedAt = DateTimeOffset.Now
+        });
+
+        while (RecentSessions.Count > 10)
+        {
+            RecentSessions.RemoveAt(RecentSessions.Count - 1);
+        }
+
+        _recentSessionStore.Save(RecentSessions);
+    }
 
     private void ReplaceCalibrationProfile(CalibrationProfile oldProfile, CalibrationProfile newProfile)
     {

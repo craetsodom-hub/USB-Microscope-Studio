@@ -69,6 +69,31 @@
                         <Button Content="Choose folder" Command="{Binding ChooseSnapshotFolderCommand}" AutomationProperties.AutomationId="ChooseSnapshotFolderButton" />
                         <TextBlock Text="{Binding SnapshotFolderPath}" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" Margin="0,2,0,14" AutomationProperties.AutomationId="SnapshotFolderPathText" />
 
+                        <TextBlock Text="Session" FontSize="13" FontWeight="SemiBold" Margin="0,6,0,8" />
+                        <UniformGrid Columns="2" Margin="0,0,0,8">
+                            <Button Content="New" Command="{Binding NewSessionCommand}" AutomationProperties.AutomationId="NewSessionButton" />
+                            <Button Content="Save" Command="{Binding SaveSessionCommand}" AutomationProperties.AutomationId="SaveSessionButton" />
+                            <Button Content="Save As" Command="{Binding SaveSessionAsCommand}" AutomationProperties.AutomationId="SaveSessionAsButton" />
+                            <Button Content="Open" Click="OpenSession_Click" AutomationProperties.AutomationId="OpenSessionButton" />
+                        </UniformGrid>
+                        <ComboBox ItemsSource="{Binding RecentSessions}" SelectedItem="{Binding SelectedRecentSession}" DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="RecentSessionsSelector" />
+                        <Button Content="Open recent" Command="{Binding OpenRecentSessionCommand}" Margin="0,4,0,8" AutomationProperties.AutomationId="OpenRecentSessionButton" />
+                        <TextBlock Text="Project name" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
+                        <TextBox Text="{Binding SessionName, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="SessionNameTextBox" />
+                        <TextBlock Text="Customer" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
+                        <TextBox Text="{Binding CustomerName, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="CustomerNameTextBox" />
+                        <TextBlock Text="Device model" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
+                        <TextBox Text="{Binding DeviceModel, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="DeviceModelTextBox" />
+                        <TextBlock Text="Serial / asset tag" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
+                        <TextBox Text="{Binding SerialAssetTag, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="SerialAssetTagTextBox" />
+                        <TextBlock Text="Technician" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
+                        <TextBox Text="{Binding TechnicianName, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="TechnicianNameTextBox" />
+                        <TextBlock Text="Job / order number" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
+                        <TextBox Text="{Binding JobOrderNumber, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="JobOrderNumberTextBox" />
+                        <TextBlock Text="Notes" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
+                        <TextBox Text="{Binding SessionNotes, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" Height="62" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" AutomationProperties.AutomationId="SessionNotesTextBox" />
+                        <TextBlock Text="{Binding CurrentSessionFolderPath}" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" Margin="0,2,0,14" AutomationProperties.AutomationId="CurrentSessionFolderText" />
+
                         <TextBlock Text="View" FontSize="13" FontWeight="SemiBold" Margin="0,6,0,8" />
                         <UniformGrid Columns="3" Margin="0,0,0,10">
                             <Button Content="-" Command="{Binding ZoomOutCommand}" AutomationProperties.AutomationId="ZoomOutButton" />

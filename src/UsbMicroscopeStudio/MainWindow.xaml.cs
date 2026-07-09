@@ -74,8 +74,9 @@ public partial class MainWindow : Window
             return;
         }
 
-        Directory.CreateDirectory(_viewModel.SnapshotFolderPath);
-        var path = GetAvailablePath(Path.Combine(_viewModel.SnapshotFolderPath, $"annotated-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.png"));
+        var annotatedFrameFolder = _viewModel.GetAnnotatedFrameFolderPath();
+        Directory.CreateDirectory(annotatedFrameFolder);
+        var path = GetAvailablePath(Path.Combine(annotatedFrameFolder, $"annotated-{DateTimeOffset.Now:yyyyMMdd-HHmmss}.png"));
         var bitmap = _inspectionFrameRenderer.RenderAnnotatedFrame(
             _viewModel.PreviewFrame,
             _viewModel.Annotations.ToList(),
@@ -100,6 +101,21 @@ public partial class MainWindow : Window
         if (dialog.ShowDialog(this) == true)
         {
             _viewModel.OpenInspection(dialog.FileName);
+        }
+    }
+
+    private void OpenSession_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "Open session",
+            Filter = "Inspection session (*.json)|*.json|All files (*.*)|*.*",
+            InitialDirectory = Directory.Exists(_viewModel.WorkspaceFolderPath) ? _viewModel.WorkspaceFolderPath : Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)
+        };
+
+        if (dialog.ShowDialog(this) == true)
+        {
+            _viewModel.OpenSession(dialog.FileName);
         }
     }
 
