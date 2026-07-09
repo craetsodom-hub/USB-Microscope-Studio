@@ -78,6 +78,11 @@
                         </UniformGrid>
                         <ComboBox ItemsSource="{Binding RecentSessions}" SelectedItem="{Binding SelectedRecentSession}" DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="RecentSessionsSelector" />
                         <Button Content="Open recent" Command="{Binding OpenRecentSessionCommand}" Margin="0,4,0,8" AutomationProperties.AutomationId="OpenRecentSessionButton" />
+                        <UniformGrid Columns="2" Margin="0,0,0,8">
+                            <Button Content="Export HTML Report" Command="{Binding ExportHtmlReportCommand}" AutomationProperties.AutomationId="ExportHtmlReportButton" />
+                            <Button Content="Open Last Report" Command="{Binding OpenLastReportCommand}" AutomationProperties.AutomationId="OpenLastReportButton" />
+                        </UniformGrid>
+                        <TextBlock Text="{Binding LastReportPath}" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,8" AutomationProperties.AutomationId="LastReportPathText" />
                         <TextBlock Text="Project name" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
                         <TextBox Text="{Binding SessionName, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="SessionNameTextBox" />
                         <TextBlock Text="Customer" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
