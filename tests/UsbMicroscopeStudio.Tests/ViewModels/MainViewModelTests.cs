@@ -1,6 +1,7 @@
 using System.Windows.Media.Imaging;
 using UsbMicroscopeStudio.Models;
 using UsbMicroscopeStudio.Models.Inspection;
+using UsbMicroscopeStudio.Models.Sessions;
 using UsbMicroscopeStudio.Services;
 using UsbMicroscopeStudio.ViewModels;
 
@@ -375,6 +376,127 @@ public sealed class MainViewModelTests
     }
 
     [Fact]
+    public void SaveSessionAs_StoresMetadataAnnotationsInspectionSidecarAndRecentSession()
+    {
+        var tempDirectory = Path.Combine(Path.GetTempPath(), "UsbMicroscopeStudioViewModelSessionTests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDirectory);
+        try
+        {
+            var recentStore = new FakeRecentSessionStore([]);
+            using var viewModel = CreateViewModel(folderPicker: new FakeFolderPicker(tempDirectory), recentSessionStore: recentStore);
+            viewModel.SessionName = "Board A";
+            viewModel.CustomerName = "Contoso";
+            viewModel.DeviceModel = "Controller";
+            viewModel.SerialAssetTag = "SN-1";
+            viewModel.TechnicianName = "Dana";
+            viewModel.JobOrderNumber = "WO-1";
+            viewModel.SessionNotes = "Initial inspection";
+            viewModel.Annotations.Add(new InspectionAnnotation
+            {
+                Tool = InspectionTool.Angle,
+                IsMeasurement = true,
+                Points = [new(0.1, 0.4), new(0.5, 0.5), new(0.8, 0.2)]
+            });
+
+            viewModel.SaveSessionAs();
+            var sessionPath = viewModel.CurrentSessionJsonPath!;
+            Assert.EndsWith(Path.Combine("sidecars", "session.json"), sessionPath);
+
+            viewModel.SaveInspectionSidecar();
+            var inspectionSidecarPath = viewModel.InspectionJsonSidecarPath!;
+            Assert.EndsWith(".json", inspectionSidecarPath);
+            Assert.Contains($"{Path.DirectorySeparatorChar}inspection-", inspectionSidecarPath);
+
+            viewModel.SaveSession();
+            var sessionDocument = new InspectionSessionStore().Load(sessionPath);
+            Assert.Equal(sessionPath, sessionDocument.SessionJsonPath);
+            Assert.Equal(inspectionSidecarPath, sessionDocument.InspectionJsonSidecarPath);
+            Assert.NotEqual(sessionDocument.SessionJsonPath, sessionDocument.InspectionJsonSidecarPath);
+
+            using var reopened = CreateViewModel(recentSessionStore: recentStore);
+            reopened.OpenSession(sessionPath);
+
+            Assert.Equal(sessionPath, reopened.CurrentSessionJsonPath);
+            Assert.Equal(inspectionSidecarPath, reopened.InspectionJsonSidecarPath);
+            Assert.Equal("Board A", reopened.SessionName);
+            Assert.Equal("Contoso", reopened.CustomerName);
+            Assert.Equal("Controller", reopened.DeviceModel);
+            Assert.Equal("SN-1", reopened.SerialAssetTag);
+            Assert.Equal("Dana", reopened.TechnicianName);
+            Assert.Equal("WO-1", reopened.JobOrderNumber);
+            Assert.Equal("Initial inspection", reopened.SessionNotes);
+            Assert.Single(reopened.Annotations);
+            Assert.Equal(InspectionTool.Angle, reopened.Annotations[0].Tool);
+            Assert.Single(recentStore.SavedSessions!);
+            Assert.Equal(sessionPath, recentStore.SavedSessions![0].SessionPath);
+
+            using var recentReopened = CreateViewModel(recentSessionStore: new FakeRecentSessionStore(recentStore.SavedSessions!));
+            recentReopened.SelectedRecentSession = recentReopened.RecentSessions.Single();
+            recentReopened.OpenRecentSession();
+
+            Assert.Equal(sessionPath, recentReopened.CurrentSessionJsonPath);
+            Assert.Equal(inspectionSidecarPath, recentReopened.InspectionJsonSidecarPath);
+            Assert.Equal("Board A", recentReopened.SessionName);
+            Assert.Single(recentReopened.Annotations);
+        }
+        finally
+        {
+            Directory.Delete(tempDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void OpenRecentSession_LoadsSessionJsonPathInsteadOfInspectionSidecarPath()
+    {
+        var tempDirectory = Path.Combine(Path.GetTempPath(), "UsbMicroscopeStudioRecentSessionViewModelTests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDirectory);
+        try
+        {
+            var store = new InspectionSessionStore();
+            var inspectionSidecarPath = Path.Combine(tempDirectory, "inspection-should-not-open.json");
+            var saved = store.Save(new InspectionSessionDocument
+            {
+                SessionName = "Recent board",
+                CustomerName = "Fabrikam",
+                InspectionJsonSidecarPath = inspectionSidecarPath,
+                Annotations =
+                [
+                    new InspectionAnnotation
+                    {
+                        Tool = InspectionTool.Text,
+                        Text = "Recent note",
+                        Points = [new(0.2, 0.3)]
+                    }
+                ]
+            }, tempDirectory);
+
+            using var viewModel = CreateViewModel(recentSessionStore: new FakeRecentSessionStore(
+            [
+                new RecentSessionEntry
+                {
+                    SessionName = saved.SessionName,
+                    SessionPath = saved.SessionJsonPath!,
+                    LastOpenedAt = DateTimeOffset.Now
+                }
+            ]));
+
+            viewModel.SelectedRecentSession = viewModel.RecentSessions.Single();
+            viewModel.OpenRecentSession();
+
+            Assert.Equal(saved.SessionJsonPath, viewModel.CurrentSessionJsonPath);
+            Assert.Equal(inspectionSidecarPath, viewModel.InspectionJsonSidecarPath);
+            Assert.Equal("Recent board", viewModel.SessionName);
+            Assert.Equal("Fabrikam", viewModel.CustomerName);
+            Assert.Single(viewModel.Annotations);
+            Assert.Equal("Recent note", viewModel.Annotations[0].Text);
+        }
+        finally
+        {
+            Directory.Delete(tempDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
     public void ZoomCommandsClampToSupportedRange()
     {
         using var viewModel = CreateViewModel();
@@ -400,7 +522,9 @@ public sealed class MainViewModelTests
         ISnapshotService? snapshotService = null,
         FakeSettingsStore? settingsStore = null,
         FakeFolderPicker? folderPicker = null,
-        FakeCalibrationProfileStore? calibrationProfileStore = null)
+        FakeCalibrationProfileStore? calibrationProfileStore = null,
+        InspectionSessionStore? sessionStore = null,
+        FakeRecentSessionStore? recentSessionStore = null)
     {
         return new MainViewModel(
             catalog ?? new FakeCameraCatalog([new CameraDevice("demo://microscope", "Demo", -1, true)], [new CameraFormat(640, 480, 30)]),
@@ -409,7 +533,10 @@ public sealed class MainViewModelTests
             settingsStore ?? new FakeSettingsStore(new AppSettings(null)),
             folderPicker ?? new FakeFolderPicker(null),
             new ImmediateDispatcher(),
-            calibrationProfileStore);
+            calibrationProfileStore,
+            null,
+            sessionStore,
+            recentSessionStore);
     }
 
     private static BitmapSource CreateFrame(int width = 1, int height = 1)
@@ -555,5 +682,14 @@ public sealed class MainViewModelTests
         public IReadOnlyList<CalibrationProfile> Load() => profiles;
 
         public void Save(IReadOnlyList<CalibrationProfile> savedProfiles) => SavedProfiles = savedProfiles.ToList();
+    }
+
+    private sealed class FakeRecentSessionStore(IReadOnlyList<RecentSessionEntry> sessions) : IRecentSessionStore
+    {
+        public IReadOnlyList<RecentSessionEntry>? SavedSessions { get; private set; }
+
+        public IReadOnlyList<RecentSessionEntry> Load() => sessions;
+
+        public void Save(IReadOnlyList<RecentSessionEntry> savedSessions) => SavedSessions = savedSessions.ToList();
     }
 }

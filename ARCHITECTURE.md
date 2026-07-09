@@ -38,6 +38,8 @@
 - `JsonCalibrationProfileStore`: persisted calibration profiles by camera, resolution, and profile name.
 - `AnnotationHistory`: undo/redo snapshots for non-destructive annotation edits.
 - `AnnotationSerializer`: JSON sidecar save/load for editable inspections.
+- `InspectionSessionStore`: session folder creation and session JSON save/load.
+- `JsonRecentSessionStore`: persisted recent inspection sessions.
 
 ## Phase 2 Inspection Model
 
@@ -46,6 +48,12 @@ Annotations are stored separately from the camera frame as `InspectionAnnotation
 Clean snapshots, rendered annotated PNGs, and JSON sidecars are separate artifacts so the camera frame remains non-destructive and inspection data can be reopened later. Opening an inspection restores the clean frame, editable annotations, measurements, and a calibration profile only when that profile matches the active camera id and resolution/FPS.
 
 Calibration profiles are not global. They include camera id, selected resolution/FPS, profile name, units, and units-per-pixel. The view model exposes only profiles matching the active camera and format, clears calibration on camera/format mismatch, and never passes a mismatched profile into real-world measurement calculations.
+
+## Phase 3A Session Model
+
+Inspection sessions are stored under a user-selected workspace folder. Each session folder is named with the inspection date/time and a safe session name, then contains `clean-frames`, `annotated-frames`, and `sidecars`. The canonical session file is `sidecars/session.json`.
+
+Session JSON stores technician metadata, project/customer/device fields, clean and annotated frame paths, its own `SessionJsonPath`, the latest editable inspection sidecar path, calibration status/profile reference, annotations, and measurements. The session file remains `sidecars/session.json`; editable Phase 2 inspection sidecars remain separate `sidecars/inspection-*.json` files and can still be opened directly.
 
 ## Reconnect Strategy
 

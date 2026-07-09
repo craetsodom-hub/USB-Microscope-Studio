@@ -12,6 +12,10 @@ dotnet test tests/UsbMicroscopeStudio.Tests/UsbMicroscopeStudio.Tests.csproj --c
 
 Covered by unit tests:
 
+- Session folder naming uses inspection date/time plus a safe session name.
+- Session save/open persists metadata, artifact paths, annotations, measurements, calibration reference/status, and distinct session JSON versus editable inspection sidecar paths.
+- Recent sessions are persisted and reloaded.
+- The view model can save and reopen a session with annotations and calibration references.
 - Camera refresh selects hardware before Demo Mode.
 - Formats load after selection.
 - Rapid camera switching ignores stale format results.
@@ -59,6 +63,10 @@ Covered by unit tests:
 16. Switch camera or format and confirm mismatched calibration profiles disappear and measurements return to `Uncalibrated`.
 17. Save clean frame, annotated frame, and JSON sidecar and confirm each file is created.
 18. Open the JSON sidecar and confirm the clean frame, annotations, measurements, and valid calibration profile are restored for editing.
+19. Create a new session, enter project/customer/device/serial/technician/job/notes metadata, and save it into a workspace folder.
+20. Confirm the session folder contains `clean-frames`, `annotated-frames`, and `sidecars/session.json`.
+21. Reopen the saved session and confirm metadata, text annotation, angle annotation, clean frame, annotated frame, `sidecars/session.json`, separate `sidecars/inspection-*.json`, and calibration status/profile reference are restored.
+22. Confirm the saved session appears in Recent Sessions and can be reopened from the recent-session selector.
 
 To force Demo Mode on machines that have a webcam attached:
 
@@ -67,6 +75,6 @@ $env:USB_MICROSCOPE_STUDIO_DEMO_ONLY = "1"
 dotnet run --project src/UsbMicroscopeStudio/UsbMicroscopeStudio.csproj
 ```
 
-## Phase 1 Constraints
+## Phase 3A Constraints
 
-Recording, PDF reports, payments, licensing, and Store packaging are intentionally not tested because they are not part of Phase 2.
+Recording, PDF reports, HTML reports, payments, licensing, Store packaging, release packaging, and a full UI redesign are intentionally not tested because they are not part of Phase 3A.
