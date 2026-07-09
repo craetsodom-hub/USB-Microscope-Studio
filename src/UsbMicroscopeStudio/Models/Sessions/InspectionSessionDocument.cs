@@ -24,6 +24,8 @@ public sealed record InspectionSessionDocument
 
     public string? SessionFolderPath { get; init; }
 
+    public string? SessionJsonPath { get; init; }
+
     public string? CleanFramePath { get; init; }
 
     public string? AnnotatedFramePath { get; init; }

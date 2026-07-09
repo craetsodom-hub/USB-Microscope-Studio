@@ -862,6 +862,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             InspectionDateTime = InspectionDateTime,
             WorkspaceFolderPath = workspaceFolder,
             SessionFolderPath = CurrentSessionFolderPath,
+            SessionJsonPath = CurrentSessionJsonPath,
             CleanFramePath = inspection.CleanFramePath,
             AnnotatedFramePath = inspection.AnnotatedFramePath,
             InspectionJsonSidecarPath = InspectionJsonSidecarPath,
@@ -879,7 +880,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             var saved = _sessionStore.Save(CreateSessionDocument(workspaceFolder), workspaceFolder);
             ApplySessionPaths(saved);
-            AddRecentSession(saved.SessionName, saved.InspectionJsonSidecarPath ?? CurrentSessionJsonPath ?? string.Empty);
+            AddRecentSession(saved.SessionName, saved.SessionJsonPath ?? CurrentSessionJsonPath ?? string.Empty);
             StatusMessage = $"Session saved: {CurrentSessionJsonPath}";
         }
         catch (Exception ex)
@@ -948,7 +949,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         WorkspaceFolderPath = session.WorkspaceFolderPath ?? WorkspaceFolderPath;
         CurrentSessionFolderPath = session.SessionFolderPath;
-        CurrentSessionJsonPath = session.InspectionJsonSidecarPath;
+        CurrentSessionJsonPath = session.SessionJsonPath;
         if (!string.IsNullOrWhiteSpace(CurrentSessionFolderPath))
         {
             var paths = _sessionStore.EnsureSessionFolders(CurrentSessionFolderPath);

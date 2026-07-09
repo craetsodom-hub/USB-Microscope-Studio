@@ -9,7 +9,7 @@ Turn the inspection workflow into a session-based technician product foundation.
 - Inspection sessions with project name, customer, device model, serial/asset tag, technician, job/order number, notes, and inspection date/time.
 - Session folder structure under a selected workspace: date plus safe session name, with `clean-frames`, `annotated-frames`, and `sidecars`.
 - New Session, Save Session, Save Session As, Open Session, and Recent Sessions.
-- Session JSON persistence for metadata, clean frame path, annotated frame path, inspection JSON sidecar path, calibration status/profile reference, annotations, and measurements.
+- Session JSON persistence for metadata, clean frame path, annotated frame path, separate inspection JSON sidecar path, calibration status/profile reference, annotations, and measurements.
 - Existing Phase 2 save flows continue to work: Save clean, Save annotated, Save JSON, Open inspection.
 - Recent session persistence in app data.
 

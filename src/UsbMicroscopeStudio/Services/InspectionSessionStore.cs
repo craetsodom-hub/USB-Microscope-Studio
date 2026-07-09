@@ -19,7 +19,7 @@ public sealed class InspectionSessionStore
         {
             WorkspaceFolderPath = workspaceFolder,
             SessionFolderPath = paths.SessionFolder,
-            InspectionJsonSidecarPath = paths.SessionJsonPath
+            SessionJsonPath = paths.SessionJsonPath
         };
 
         File.WriteAllText(paths.SessionJsonPath, JsonSerializer.Serialize(saved, JsonOptions));

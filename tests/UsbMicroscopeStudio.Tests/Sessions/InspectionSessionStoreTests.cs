@@ -32,7 +32,28 @@ public sealed class InspectionSessionStoreTests : IDisposable
         Assert.True(Directory.Exists(Path.Combine(saved.SessionFolderPath!, "clean-frames")));
         Assert.True(Directory.Exists(Path.Combine(saved.SessionFolderPath!, "annotated-frames")));
         Assert.True(Directory.Exists(Path.Combine(saved.SessionFolderPath!, "sidecars")));
-        Assert.Equal(Path.Combine(saved.SessionFolderPath!, "sidecars", "session.json"), saved.InspectionJsonSidecarPath);
+        Assert.Equal(Path.Combine(saved.SessionFolderPath!, "sidecars", "session.json"), saved.SessionJsonPath);
+        Assert.Null(saved.InspectionJsonSidecarPath);
+    }
+
+    [Fact]
+    public void Save_PreservesSeparateSessionJsonAndInspectionSidecarPaths()
+    {
+        var store = new InspectionSessionStore();
+        var inspectionSidecarPath = Path.Combine(_tempRoot, "existing-sidecars", "inspection-20260709-143000.json");
+        var session = new InspectionSessionDocument
+        {
+            SessionName = "Board A",
+            InspectionDateTime = new DateTimeOffset(2026, 7, 9, 14, 30, 0, TimeSpan.Zero),
+            InspectionJsonSidecarPath = inspectionSidecarPath
+        };
+
+        var saved = store.Save(session, _tempRoot);
+
+        Assert.Equal(Path.Combine(saved.SessionFolderPath!, "sidecars", "session.json"), saved.SessionJsonPath);
+        Assert.Equal(inspectionSidecarPath, saved.InspectionJsonSidecarPath);
+        Assert.NotEqual(saved.SessionJsonPath, saved.InspectionJsonSidecarPath);
+        Assert.True(File.Exists(saved.SessionJsonPath));
     }
 
     [Fact]
@@ -58,6 +79,7 @@ public sealed class InspectionSessionStoreTests : IDisposable
             InspectionDateTime = new DateTimeOffset(2026, 7, 9, 15, 0, 0, TimeSpan.Zero),
             CleanFramePath = "clean.png",
             AnnotatedFramePath = "annotated.png",
+            InspectionJsonSidecarPath = Path.Combine(_tempRoot, "sidecars", "inspection-20260709-150000.json"),
             CalibrationStatus = "Calibrated",
             CalibrationProfileKey = profile.ProfileKey,
             CalibrationProfile = profile,
@@ -74,9 +96,11 @@ public sealed class InspectionSessionStoreTests : IDisposable
         };
 
         var saved = store.Save(session, _tempRoot);
-        var loaded = store.Load(saved.InspectionJsonSidecarPath!);
+        var loaded = store.Load(saved.SessionJsonPath!);
 
         Assert.Equal("Connector inspect", loaded.SessionName);
+        Assert.Equal(Path.Combine(saved.SessionFolderPath!, "sidecars", "session.json"), loaded.SessionJsonPath);
+        Assert.Equal(session.InspectionJsonSidecarPath, loaded.InspectionJsonSidecarPath);
         Assert.Equal("Contoso", loaded.CustomerName);
         Assert.Equal("USB board", loaded.DeviceModel);
         Assert.Equal("A-100", loaded.SerialAssetTag);
