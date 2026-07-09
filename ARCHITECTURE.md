@@ -40,6 +40,7 @@
 - `AnnotationSerializer`: JSON sidecar save/load for editable inspections.
 - `InspectionSessionStore`: session folder creation and session JSON save/load.
 - `JsonRecentSessionStore`: persisted recent inspection sessions.
+- `HtmlInspectionReportService`: offline HTML report generation, report path creation, image copying, and HTML escaping.
 
 ## Phase 2 Inspection Model
 
@@ -54,6 +55,12 @@ Calibration profiles are not global. They include camera id, selected resolution
 Inspection sessions are stored under a user-selected workspace folder. Each session folder is named with the inspection date/time and a safe session name, then contains `clean-frames`, `annotated-frames`, and `sidecars`. The canonical session file is `sidecars/session.json`.
 
 Session JSON stores technician metadata, project/customer/device fields, clean and annotated frame paths, its own `SessionJsonPath`, the latest editable inspection sidecar path, calibration status/profile reference, annotations, and measurements. The session file remains `sidecars/session.json`; editable Phase 2 inspection sidecars remain separate `sidecars/inspection-*.json` files and can still be opened directly.
+
+## Phase 3B HTML Reports
+
+HTML reports are generated from an `InspectionSessionDocument`, not from WPF visual state. Reports are saved inside the current session folder under `reports/report-YYYYMMDD-HHMMSS.html`. Available clean and annotated frame images are copied into `reports/assets` and referenced with relative paths so the report remains readable offline when opened later.
+
+The template is deterministic, self-contained, and uses inline CSS only. User-entered metadata, notes, and annotation text are HTML-escaped before rendering.
 
 ## Reconnect Strategy
 

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.IO;
 using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -25,6 +26,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly AnnotationSerializer _annotationSerializer;
     private readonly InspectionSessionStore _sessionStore;
     private readonly IRecentSessionStore _recentSessionStore;
+    private readonly HtmlInspectionReportService _htmlReportService;
     private readonly SemaphoreSlim _previewGate = new(1, 1);
     private int _formatLoadRequestId;
     private int _previewStartRequestId;
@@ -42,7 +44,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         ICalibrationProfileStore? calibrationProfileStore = null,
         AnnotationSerializer? annotationSerializer = null,
         InspectionSessionStore? sessionStore = null,
-        IRecentSessionStore? recentSessionStore = null)
+        IRecentSessionStore? recentSessionStore = null,
+        HtmlInspectionReportService? htmlReportService = null)
     {
         _cameraCatalog = cameraCatalog;
         _previewService = previewService;
@@ -54,6 +57,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _annotationSerializer = annotationSerializer ?? new AnnotationSerializer();
         _sessionStore = sessionStore ?? new InspectionSessionStore();
         _recentSessionStore = recentSessionStore ?? new JsonRecentSessionStore();
+        _htmlReportService = htmlReportService ?? new HtmlInspectionReportService();
 
         _previewService.FrameReady += OnFrameReady;
         _previewService.StatusChanged += OnStatusChanged;
@@ -182,6 +186,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private string? inspectionJsonSidecarPath;
+
+    [ObservableProperty]
+    private string? lastReportPath;
 
     [ObservableProperty]
     private RecentSessionEntry? selectedRecentSession;
@@ -508,6 +515,54 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
 
         OpenSession(SelectedRecentSession.SessionPath);
+    }
+
+    [RelayCommand]
+    public void ExportHtmlReport()
+    {
+        if (string.IsNullOrWhiteSpace(CurrentSessionFolderPath))
+        {
+            SaveSession();
+            if (string.IsNullOrWhiteSpace(CurrentSessionFolderPath))
+            {
+                return;
+            }
+        }
+        else if (!string.IsNullOrWhiteSpace(WorkspaceFolderPath))
+        {
+            SaveSessionToWorkspace(WorkspaceFolderPath);
+        }
+
+        try
+        {
+            var result = _htmlReportService.Export(CreateSessionDocument(WorkspaceFolderPath));
+            LastReportPath = result.ReportPath;
+            StatusMessage = $"HTML report exported: {LastReportPath}";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"HTML report export failed: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    public void OpenLastReport()
+    {
+        if (string.IsNullOrWhiteSpace(LastReportPath) || !File.Exists(LastReportPath))
+        {
+            StatusMessage = "No exported report is available.";
+            return;
+        }
+
+        try
+        {
+            Process.Start(new ProcessStartInfo(LastReportPath) { UseShellExecute = true });
+            StatusMessage = $"Opened report: {LastReportPath}";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Open report failed: {ex.Message}";
+        }
     }
 
     [RelayCommand]

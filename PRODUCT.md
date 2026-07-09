@@ -1,10 +1,22 @@
 # Product
 
-## Phase 3A Goal
+## Phase 3B Goal
+
+Add offline HTML inspection reports for saved inspection sessions. Phase 3B turns saved session data, frame images, annotations, measurements, and metadata into a technician-readable report without adding PDF export or packaging.
+
+## Phase 3B Included
+
+- Export HTML Report and Open Last Report actions.
+- Report files saved under the current session folder in `reports` as `report-YYYYMMDD-HHMMSS.html`.
+- Offline HTML template with no external CDN or internet dependency.
+- Report content includes app name, report title, session metadata, notes, calibration status/profile, clean frame, annotated frame, annotation/measurement summary, and generated timestamp.
+- Clean and annotated frame images are copied into `reports/assets` when available so reports continue opening later from the session folder.
+
+## Phase 3A Foundation
 
 Turn the inspection workflow into a session-based technician product foundation. Phase 3A adds inspection project/session management and customer/device metadata while preserving the Phase 1 camera workflow and Phase 2 inspection tools.
 
-## Phase 3A Included
+## Included Foundation
 
 - Inspection sessions with project name, customer, device model, serial/asset tag, technician, job/order number, notes, and inspection date/time.
 - Session folder structure under a selected workspace: date plus safe session name, with `clean-frames`, `annotated-frames`, and `sidecars`.
@@ -13,11 +25,11 @@ Turn the inspection workflow into a session-based technician product foundation.
 - Existing Phase 2 save flows continue to work: Save clean, Save annotated, Save JSON, Open inspection.
 - Recent session persistence in app data.
 
-## Phase 2 Foundation
+## Phase 2 Inspection Foundation
 
 Build a reliable technician-focused Windows app for USB/UVC microscope inspection. Phase 2 adds non-destructive inspection overlays, annotations, calibration, and measurement workflows on top of the Phase 1 live preview foundation.
 
-## Included Foundation
+## Included Inspection Foundation
 
 - Detect USB/UVC video devices.
 - Select camera source.
@@ -39,14 +51,14 @@ Build a reliable technician-focused Windows app for USB/UVC microscope inspectio
 - Freeze & Inspect mode plus clean-frame, annotated-frame, JSON sidecar save, and open-inspection workflows.
 - Annotated PNG export at native frame dimensions, independent of current UI zoom, letterboxing, fullscreen state, or taskbar content.
 
-## Excluded From Phase 3A
+## Excluded From Phase 3B
 
 - Recording.
 - PDF reports.
-- HTML reports.
 - Payments.
 - Licensing.
 - Microsoft Store packaging.
+- Release packaging.
 - Full UI redesign.
 
 ## Primary User

@@ -16,6 +16,7 @@ Covered by unit tests:
 - Session save/open persists metadata, artifact paths, annotations, measurements, calibration reference/status, and distinct session JSON versus editable inspection sidecar paths.
 - Recent sessions are persisted and reloaded.
 - The view model can save and reopen a session with annotations and calibration references.
+- HTML report generation, user-text escaping, missing image handling, measurement table rendering, and report path creation.
 - Camera refresh selects hardware before Demo Mode.
 - Formats load after selection.
 - Rapid camera switching ignores stale format results.
@@ -67,6 +68,8 @@ Covered by unit tests:
 20. Confirm the session folder contains `clean-frames`, `annotated-frames`, and `sidecars/session.json`.
 21. Reopen the saved session and confirm metadata, text annotation, angle annotation, clean frame, annotated frame, `sidecars/session.json`, separate `sidecars/inspection-*.json`, and calibration status/profile reference are restored.
 22. Confirm the saved session appears in Recent Sessions and can be reopened from the recent-session selector.
+23. Export an HTML report and confirm `reports/report-YYYYMMDD-HHMMSS.html` is created under the session folder.
+24. Open the report locally and confirm metadata, notes, calibration status/profile, clean image, annotated image, text annotation, angle measurement, and generated timestamp are readable offline.
 
 To force Demo Mode on machines that have a webcam attached:
 
@@ -75,6 +78,6 @@ $env:USB_MICROSCOPE_STUDIO_DEMO_ONLY = "1"
 dotnet run --project src/UsbMicroscopeStudio/UsbMicroscopeStudio.csproj
 ```
 
-## Phase 3A Constraints
+## Phase 3B Constraints
 
-Recording, PDF reports, HTML reports, payments, licensing, Store packaging, release packaging, and a full UI redesign are intentionally not tested because they are not part of Phase 3A.
+Recording, PDF reports, payments, licensing, Store packaging, release packaging, and a full UI redesign are intentionally not tested because they are not part of Phase 3B.
