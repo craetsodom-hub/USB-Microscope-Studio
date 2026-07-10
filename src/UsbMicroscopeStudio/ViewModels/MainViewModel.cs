@@ -62,6 +62,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _previewService.FrameReady += OnFrameReady;
         _previewService.StatusChanged += OnStatusChanged;
         Annotations.CollectionChanged += AnnotationsOnCollectionChanged;
+        RecentSessions.CollectionChanged += RecentSessionsOnCollectionChanged;
 
         var settings = _settingsStore.Load();
         snapshotFolderPath = string.IsNullOrWhiteSpace(settings.SnapshotFolderPath)
@@ -120,6 +121,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public bool HasNoVisibleCalibrationProfiles => !HasVisibleCalibrationProfiles;
 
     public bool HasSelectedCalibrationProfile => SelectedCalibrationProfile is not null;
+
+    public bool HasRecentSessions => RecentSessions.Count > 0;
+
+    public bool HasNoRecentSessions => !HasRecentSessions;
+
+    public bool HasSelectedRecentSession =>
+        SelectedRecentSession is not null && !string.IsNullOrWhiteSpace(SelectedRecentSession.SessionPath);
+
+    public bool IsRecentSessionSelectionEmpty => HasRecentSessions && !HasSelectedRecentSession;
 
     public IReadOnlyList<InspectionTool> ToolChoices { get; } =
     [
@@ -352,6 +362,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
     partial void OnDeviceModelChanged(string value) => OnPropertyChanged(nameof(DeviceDisplay));
 
     partial void OnCurrentSessionFolderPathChanged(string? value) => OnPropertyChanged(nameof(CurrentSessionFolderDisplay));
+
+    partial void OnSelectedRecentSessionChanged(RecentSessionEntry? value)
+    {
+        OnPropertyChanged(nameof(HasSelectedRecentSession));
+        OnPropertyChanged(nameof(IsRecentSessionSelectionEmpty));
+    }
 
     partial void OnCurrentSessionJsonPathChanged(string? value)
     {
@@ -829,6 +845,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _previewService.FrameReady -= OnFrameReady;
         _previewService.StatusChanged -= OnStatusChanged;
         Annotations.CollectionChanged -= AnnotationsOnCollectionChanged;
+        RecentSessions.CollectionChanged -= RecentSessionsOnCollectionChanged;
         _previewService.Dispose();
         _previewGate.Dispose();
     }
@@ -876,6 +893,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private void AnnotationsOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         UpdateMeasurementStatus();
+    }
+
+    private void RecentSessionsOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        OnPropertyChanged(nameof(HasRecentSessions));
+        OnPropertyChanged(nameof(HasNoRecentSessions));
+        OnPropertyChanged(nameof(HasSelectedRecentSession));
+        OnPropertyChanged(nameof(IsRecentSessionSelectionEmpty));
     }
 
     private void OnStatusChanged(object? sender, string status)

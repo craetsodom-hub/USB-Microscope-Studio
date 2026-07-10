@@ -484,6 +484,38 @@ public sealed class MainViewModelTests
     }
 
     [Fact]
+    public void RecentSessionUiState_TracksEmptyAndSelectedEntries()
+    {
+        using var viewModel = CreateViewModel(recentSessionStore: new FakeRecentSessionStore([]));
+
+        Assert.True(viewModel.HasNoRecentSessions);
+        Assert.False(viewModel.HasRecentSessions);
+        Assert.False(viewModel.HasSelectedRecentSession);
+
+        var recent = new RecentSessionEntry
+        {
+            SessionName = "Bench intake",
+            SessionPath = "C:\\sessions\\sidecars\\session.json"
+        };
+        viewModel.RecentSessions.Add(recent);
+        viewModel.SelectedRecentSession = recent;
+
+        Assert.True(viewModel.HasRecentSessions);
+        Assert.False(viewModel.HasNoRecentSessions);
+        Assert.True(viewModel.HasSelectedRecentSession);
+
+        viewModel.SelectedRecentSession = null;
+
+        Assert.True(viewModel.IsRecentSessionSelectionEmpty);
+
+        viewModel.RecentSessions.Clear();
+
+        Assert.True(viewModel.HasNoRecentSessions);
+        Assert.False(viewModel.HasSelectedRecentSession);
+        Assert.False(viewModel.IsRecentSessionSelectionEmpty);
+    }
+
+    [Fact]
     public void ExportHtmlReport_AfterSavedSession_UpdatesLastReportPath()
     {
         var tempDirectory = Path.Combine(Path.GetTempPath(), "UsbMicroscopeStudioReportExportRegression", Guid.NewGuid().ToString("N"));
