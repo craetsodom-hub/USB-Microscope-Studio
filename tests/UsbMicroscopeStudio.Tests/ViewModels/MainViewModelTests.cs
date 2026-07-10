@@ -373,6 +373,7 @@ public sealed class MainViewModelTests
         Assert.Equal("C:\\New", viewModel.SnapshotFolderPath);
         Assert.Equal("C:\\New", settings.SavedSettings?.SnapshotFolderPath);
         Assert.Equal("C:\\Old", picker.InitialDirectory);
+        Assert.Equal("Select snapshot folder", picker.Title);
     }
 
     [Fact]
@@ -383,7 +384,8 @@ public sealed class MainViewModelTests
         try
         {
             var recentStore = new FakeRecentSessionStore([]);
-            using var viewModel = CreateViewModel(folderPicker: new FakeFolderPicker(tempDirectory), recentSessionStore: recentStore);
+            var picker = new FakeFolderPicker(tempDirectory);
+            using var viewModel = CreateViewModel(folderPicker: picker, recentSessionStore: recentStore);
             viewModel.SessionName = "Board A";
             viewModel.CustomerName = "Contoso";
             viewModel.DeviceModel = "Controller";
@@ -401,6 +403,8 @@ public sealed class MainViewModelTests
             viewModel.SaveSessionAs();
             var sessionPath = viewModel.CurrentSessionJsonPath!;
             Assert.EndsWith(Path.Combine("sidecars", "session.json"), sessionPath);
+            Assert.True(File.Exists(sessionPath));
+            Assert.Equal("Select session workspace folder", picker.Title);
 
             viewModel.SaveInspectionSidecar();
             var inspectionSidecarPath = viewModel.InspectionJsonSidecarPath!;
@@ -438,6 +442,72 @@ public sealed class MainViewModelTests
             Assert.Equal(inspectionSidecarPath, recentReopened.InspectionJsonSidecarPath);
             Assert.Equal("Board A", recentReopened.SessionName);
             Assert.Single(recentReopened.Annotations);
+        }
+        finally
+        {
+            Directory.Delete(tempDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void SaveSessionAs_CreatesSessionJsonAndRecentSessionPath()
+    {
+        var tempDirectory = Path.Combine(Path.GetTempPath(), "UsbMicroscopeStudioSessionSaveAsRegression", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDirectory);
+        try
+        {
+            var picker = new FakeFolderPicker(tempDirectory);
+            var recentStore = new FakeRecentSessionStore([]);
+            using var viewModel = CreateViewModel(folderPicker: picker, recentSessionStore: recentStore);
+            viewModel.SessionName = "Premium smoke";
+            viewModel.CustomerName = "Bench QA";
+            viewModel.DeviceModel = "Demo assembly";
+
+            viewModel.SaveSessionAs();
+
+            Assert.Equal("Select session workspace folder", picker.Title);
+            Assert.NotNull(viewModel.CurrentSessionJsonPath);
+            Assert.EndsWith(Path.Combine("sidecars", "session.json"), viewModel.CurrentSessionJsonPath);
+            Assert.True(File.Exists(viewModel.CurrentSessionJsonPath));
+            Assert.Equal(viewModel.CurrentSessionJsonPath, viewModel.RecentSessions.Single().SessionPath);
+            Assert.Equal(viewModel.CurrentSessionJsonPath, recentStore.SavedSessions!.Single().SessionPath);
+
+            var saved = new InspectionSessionStore().Load(viewModel.CurrentSessionJsonPath!);
+            Assert.Equal("Premium smoke", saved.SessionName);
+            Assert.Equal("Bench QA", saved.CustomerName);
+            Assert.Equal("Demo assembly", saved.DeviceModel);
+        }
+        finally
+        {
+            Directory.Delete(tempDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void ExportHtmlReport_AfterSavedSession_UpdatesLastReportPath()
+    {
+        var tempDirectory = Path.Combine(Path.GetTempPath(), "UsbMicroscopeStudioReportExportRegression", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDirectory);
+        try
+        {
+            using var viewModel = CreateViewModel(folderPicker: new FakeFolderPicker(tempDirectory));
+            viewModel.SessionName = "Report smoke";
+            viewModel.CustomerName = "Contoso";
+            viewModel.DeviceModel = "Scope model";
+            viewModel.Annotations.Add(new InspectionAnnotation
+            {
+                Tool = InspectionTool.Text,
+                Text = "Visible note",
+                Points = [new(0.4, 0.4)]
+            });
+
+            viewModel.SaveSessionAs();
+            viewModel.ExportHtmlReport();
+
+            Assert.NotNull(viewModel.LastReportPath);
+            Assert.True(File.Exists(viewModel.LastReportPath));
+            Assert.Contains($"{Path.DirectorySeparatorChar}reports{Path.DirectorySeparatorChar}report-", viewModel.LastReportPath);
+            Assert.Equal($"HTML report exported: {viewModel.LastReportPath}", viewModel.StatusMessage);
         }
         finally
         {
@@ -663,9 +733,12 @@ public sealed class MainViewModelTests
     {
         public string? InitialDirectory { get; private set; }
 
-        public string? PickFolder(string initialDirectory)
+        public string? Title { get; private set; }
+
+        public string? PickFolder(string initialDirectory, string title = "Select folder")
         {
             InitialDirectory = initialDirectory;
+            Title = title;
             return selectedFolder;
         }
     }

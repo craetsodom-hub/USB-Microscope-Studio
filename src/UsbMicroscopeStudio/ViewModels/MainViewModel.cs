@@ -91,6 +91,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     public ObservableCollection<RecentSessionEntry> RecentSessions { get; } = [];
 
+    public string CustomerDisplay => DisplayOrNotSpecified(CustomerName);
+
+    public string DeviceDisplay => DisplayOrNotSpecified(DeviceModel);
+
+    public string CurrentSessionJsonDisplay => string.IsNullOrWhiteSpace(CurrentSessionJsonPath) ? "Unsaved" : "Saved";
+
+    public string LastReportDisplay => string.IsNullOrWhiteSpace(LastReportPath) ? "Not exported" : "Ready";
+
     public IReadOnlyList<InspectionTool> ToolChoices { get; } =
     [
         InspectionTool.Select,
@@ -301,6 +309,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _settingsStore.Save(new AppSettings(value));
     }
 
+    partial void OnCustomerNameChanged(string value) => OnPropertyChanged(nameof(CustomerDisplay));
+
+    partial void OnDeviceModelChanged(string value) => OnPropertyChanged(nameof(DeviceDisplay));
+
+    partial void OnCurrentSessionJsonPathChanged(string? value) => OnPropertyChanged(nameof(CurrentSessionJsonDisplay));
+
+    partial void OnLastReportPathChanged(string? value) => OnPropertyChanged(nameof(LastReportDisplay));
+
     partial void OnSelectedCalibrationProfileChanged(CalibrationProfile? value)
     {
         if (value is not null && !MatchesCurrentCameraFormat(value))
@@ -448,7 +464,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     public void ChooseSnapshotFolder()
     {
-        var selectedFolder = _folderPickerService.PickFolder(SnapshotFolderPath);
+        var selectedFolder = _folderPickerService.PickFolder(SnapshotFolderPath, "Select snapshot folder");
         if (string.IsNullOrWhiteSpace(selectedFolder))
         {
             return;
@@ -496,7 +512,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public void SaveSessionAs()
     {
         var initialFolder = string.IsNullOrWhiteSpace(WorkspaceFolderPath) ? SnapshotFolderPath : WorkspaceFolderPath;
-        var selectedFolder = _folderPickerService.PickFolder(initialFolder);
+        var selectedFolder = _folderPickerService.PickFolder(initialFolder, "Select session workspace folder");
         if (string.IsNullOrWhiteSpace(selectedFolder))
         {
             return;
@@ -1055,6 +1071,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         _recentSessionStore.Save(RecentSessions);
     }
+
+    private static string DisplayOrNotSpecified(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? "Not specified" : value;
 
     private void ReplaceCalibrationProfile(CalibrationProfile oldProfile, CalibrationProfile newProfile)
     {

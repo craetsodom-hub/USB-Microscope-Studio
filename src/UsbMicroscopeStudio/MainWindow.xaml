@@ -16,7 +16,7 @@
     <Grid Background="{StaticResource SurfaceBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="116" />
-            <RowDefinition Height="86" />
+            <RowDefinition Height="98" />
             <RowDefinition Height="*" />
             <RowDefinition Height="38" />
         </Grid.RowDefinitions>
@@ -43,9 +43,15 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="1" Background="#101821" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="0,0,0,1" Padding="22,12">
-            <DockPanel LastChildFill="True">
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+        <Border Grid.Row="1" Background="#101821" BorderBrush="{StaticResource PanelBorderBrush}" BorderThickness="0,0,0,1" Padding="22,10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding SessionName}" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="0,0,14,0" />
                     <Border Style="{StaticResource StatusBadgeStyle}">
                         <StackPanel>
                             <TextBlock Text="Calibration" Style="{StaticResource MutedTextStyle}" />
@@ -55,35 +61,32 @@
                     <Border Style="{StaticResource StatusBadgeStyle}">
                         <StackPanel>
                             <TextBlock Text="Session file" Style="{StaticResource MutedTextStyle}" />
-                            <TextBlock Text="{Binding CurrentSessionJsonPath, TargetNullValue=Unsaved}" FontSize="12" MaxWidth="180" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding CurrentSessionJsonDisplay}" FontSize="12" MaxWidth="180" TextTrimming="CharacterEllipsis" />
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource StatusBadgeStyle}">
                         <StackPanel>
                             <TextBlock Text="Last report" Style="{StaticResource MutedTextStyle}" />
-                            <TextBlock Text="{Binding LastReportPath, TargetNullValue=Not exported}" FontSize="12" MaxWidth="180" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding LastReportDisplay}" FontSize="12" MaxWidth="180" TextTrimming="CharacterEllipsis" />
                         </StackPanel>
                     </Border>
                 </StackPanel>
 
-                <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Text="{Binding SessionName}" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                        <Border Style="{StaticResource StatusBadgeStyle}">
-                            <TextBlock Text="{Binding CustomerName, StringFormat=Customer: {0}, TargetNullValue=Customer: Not specified}" Style="{StaticResource MutedTextStyle}" />
-                        </Border>
-                        <Border Style="{StaticResource StatusBadgeStyle}">
-                            <TextBlock Text="{Binding DeviceModel, StringFormat=Device: {0}, TargetNullValue=Device: Not specified}" Style="{StaticResource MutedTextStyle}" />
-                        </Border>
-                        <Border Style="{StaticResource StatusBadgeStyle}">
-                            <TextBlock Text="{Binding SelectedCamera.DisplayName, StringFormat=Camera: {0}, TargetNullValue=Camera: None}" Style="{StaticResource MutedTextStyle}" />
-                        </Border>
-                        <Border Style="{StaticResource StatusBadgeStyle}">
-                            <TextBlock Text="{Binding SelectedFormat.DisplayName, StringFormat=Format: {0}, TargetNullValue=Format: None}" Style="{StaticResource MutedTextStyle}" />
-                        </Border>
-                    </StackPanel>
-                </StackPanel>
-            </DockPanel>
+                <WrapPanel Grid.Row="1" Margin="0,8,0,0">
+                    <Border Style="{StaticResource StatusBadgeStyle}">
+                        <TextBlock Text="{Binding CustomerDisplay, StringFormat=Customer: {0}}" Style="{StaticResource MutedTextStyle}" />
+                    </Border>
+                    <Border Style="{StaticResource StatusBadgeStyle}">
+                        <TextBlock Text="{Binding DeviceDisplay, StringFormat=Device: {0}}" Style="{StaticResource MutedTextStyle}" />
+                    </Border>
+                    <Border Style="{StaticResource StatusBadgeStyle}">
+                        <TextBlock Text="{Binding SelectedCamera.DisplayName, StringFormat=Camera: {0}, TargetNullValue=Camera: None}" Style="{StaticResource MutedTextStyle}" />
+                    </Border>
+                    <Border Style="{StaticResource StatusBadgeStyle}">
+                        <TextBlock Text="{Binding SelectedFormat.DisplayName, StringFormat=Format: {0}, TargetNullValue=Format: None}" Style="{StaticResource MutedTextStyle}" />
+                    </Border>
+                </WrapPanel>
+            </Grid>
         </Border>
 
         <Grid Grid.Row="2" Margin="18">
@@ -362,20 +365,23 @@
                             <Viewbox.RenderTransformOrigin>0.5,0.5</Viewbox.RenderTransformOrigin>
                             <Grid Width="{Binding PreviewWidth}" Height="{Binding PreviewHeight}">
                                 <Image Source="{Binding PreviewFrame}" Stretch="None" IsHitTestVisible="False" RenderOptions.BitmapScalingMode="HighQuality" AutomationProperties.AutomationId="LivePreviewImage" />
-                                <controls:InspectionOverlayControl
-                                    Panel.ZIndex="1"
-                                    Width="{Binding PreviewWidth}"
-                                    Height="{Binding PreviewHeight}"
-                                    Annotations="{Binding Annotations}"
-                                    CurrentTool="{Binding CurrentTool}"
-                                    StrokeColor="{Binding SelectedStrokeColor}"
-                                    StrokeThickness="{Binding SelectedStrokeThickness}"
-                                    ShowCrosshair="{Binding ShowCrosshair}"
-                                    ShowGrid="{Binding ShowGrid}"
-                                    GridSpacingPixels="{Binding GridSpacingPixels}"
-                                    ShowRulers="{Binding ShowRulers}"
-                                    CaptureHistoryCommand="{Binding CaptureAnnotationHistoryCommand}"
-                                    AutomationProperties.AutomationId="InspectionOverlayCanvas" />
+                                <Border Panel.ZIndex="1" Background="Transparent">
+                                    <controls:InspectionOverlayControl
+                                        Width="{Binding PreviewWidth}"
+                                        Height="{Binding PreviewHeight}"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch"
+                                        Annotations="{Binding Annotations}"
+                                        CurrentTool="{Binding CurrentTool}"
+                                        StrokeColor="{Binding SelectedStrokeColor}"
+                                        StrokeThickness="{Binding SelectedStrokeThickness}"
+                                        ShowCrosshair="{Binding ShowCrosshair}"
+                                        ShowGrid="{Binding ShowGrid}"
+                                        GridSpacingPixels="{Binding GridSpacingPixels}"
+                                        ShowRulers="{Binding ShowRulers}"
+                                        CaptureHistoryCommand="{Binding CaptureAnnotationHistoryCommand}"
+                                        AutomationProperties.AutomationId="InspectionOverlayCanvas" />
+                                </Border>
                             </Grid>
                         </Viewbox>
                     </Grid>
