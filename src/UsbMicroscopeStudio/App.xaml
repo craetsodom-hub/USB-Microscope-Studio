@@ -144,8 +144,9 @@
         </Style>
 
         <Style x:Key="DangerButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-            <Setter Property="Background" Value="#301C22" />
-            <Setter Property="BorderBrush" Value="#7D3A45" />
+            <Setter Property="Background" Value="#1A2633" />
+            <Setter Property="BorderBrush" Value="{StaticResource PanelBorderStrongBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
         </Style>
 
         <Style x:Key="CompactCommandButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
@@ -408,32 +409,42 @@
             <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="Padding" Value="7,6" />
-            <Setter Property="Margin" Value="0,0,2,0" />
+            <Setter Property="Padding" Value="8,6" />
+            <Setter Property="Margin" Value="0,0,3,0" />
             <Setter Property="FontSize" Value="12" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TabItem">
-                        <Border x:Name="Root"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="1"
-                                CornerRadius="4"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter ContentSource="Header"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center" />
-                        </Border>
+                        <Grid>
+                            <Border x:Name="Root"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter ContentSource="Header"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center" />
+                            </Border>
+                            <Border x:Name="Indicator"
+                                    Height="2"
+                                    Background="{StaticResource AccentStrongBrush}"
+                                    CornerRadius="1"
+                                    Margin="8,0"
+                                    VerticalAlignment="Bottom"
+                                    Visibility="Collapsed" />
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
-                                <Setter TargetName="Root" Property="Background" Value="#172331" />
-                                <Setter TargetName="Root" Property="BorderBrush" Value="#33475A" />
+                                <Setter TargetName="Root" Property="Background" Value="#141F2A" />
+                                <Setter TargetName="Root" Property="BorderBrush" Value="#2E4151" />
+                                <Setter TargetName="Indicator" Property="Visibility" Value="Visible" />
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Root" Property="Background" Value="#141F2A" />
-                                <Setter TargetName="Root" Property="BorderBrush" Value="#2F4354" />
+                                <Setter TargetName="Root" Property="Background" Value="#172331" />
+                                <Setter TargetName="Root" Property="BorderBrush" Value="#33495C" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>

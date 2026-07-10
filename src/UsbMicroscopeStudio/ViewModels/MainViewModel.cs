@@ -111,6 +111,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     public string StatusSummary => FormatStatusSummary(StatusMessage);
 
+    public string SessionStatusDisplay => $"{SessionDisplay} · {(string.IsNullOrWhiteSpace(CurrentSessionJsonPath) ? "Unsaved" : "Saved")}";
+
+    public string RotationDisplay => $"Rotation {RotationDegrees}°";
+
+    public bool HasVisibleCalibrationProfiles => VisibleCalibrationProfiles.Count > 0;
+
+    public bool HasNoVisibleCalibrationProfiles => !HasVisibleCalibrationProfiles;
+
+    public bool HasSelectedCalibrationProfile => SelectedCalibrationProfile is not null;
+
     public IReadOnlyList<InspectionTool> ToolChoices { get; } =
     [
         InspectionTool.Select,
@@ -256,6 +266,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private string measurementStatus = "Uncalibrated";
 
     [ObservableProperty]
+    private string measurementChipDisplay = "No measurement";
+
+    [ObservableProperty]
+    private string calibrationChipDisplay = "Uncalibrated";
+
+    [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(UndoAnnotationsCommand))]
     private bool canUndoAnnotations;
 
@@ -312,6 +328,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     partial void OnRotationDegreesChanged(int value)
     {
+        OnPropertyChanged(nameof(RotationDisplay));
         UpdatePreviewTransforms();
         SyncAnnotationsToDisplayedFrameTransform();
     }
@@ -324,7 +341,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(SnapshotFolderDisplay));
     }
 
-    partial void OnSessionNameChanged(string value) => OnPropertyChanged(nameof(SessionDisplay));
+    partial void OnSessionNameChanged(string value)
+    {
+        OnPropertyChanged(nameof(SessionDisplay));
+        OnPropertyChanged(nameof(SessionStatusDisplay));
+    }
 
     partial void OnCustomerNameChanged(string value) => OnPropertyChanged(nameof(CustomerDisplay));
 
@@ -332,7 +353,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     partial void OnCurrentSessionFolderPathChanged(string? value) => OnPropertyChanged(nameof(CurrentSessionFolderDisplay));
 
-    partial void OnCurrentSessionJsonPathChanged(string? value) => OnPropertyChanged(nameof(CurrentSessionJsonDisplay));
+    partial void OnCurrentSessionJsonPathChanged(string? value)
+    {
+        OnPropertyChanged(nameof(CurrentSessionJsonDisplay));
+        OnPropertyChanged(nameof(SessionStatusDisplay));
+    }
 
     partial void OnLastSnapshotPathChanged(string? value) => OnPropertyChanged(nameof(LastSnapshotFileDisplay));
 
@@ -353,6 +378,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         CalibrationStatus = value is null
             ? "Uncalibrated"
             : $"Calibrated: {value.Name} ({value.UnitsPerPixel:0.####} {value.Units}/px)";
+        OnPropertyChanged(nameof(HasSelectedCalibrationProfile));
         UpdateMeasurementStatus();
     }
 
@@ -901,24 +927,34 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     private void UpdateMeasurementStatus()
     {
+        var activeCalibration = ActiveCalibrationProfile();
+        CalibrationChipDisplay = activeCalibration is null ? "Uncalibrated" : "Calibrated";
         var measurement = Annotations.LastOrDefault(annotation => annotation.Tool is InspectionTool.Distance or InspectionTool.Angle && annotation.Points.Count >= 2);
         if (measurement is null)
         {
-            MeasurementStatus = ActiveCalibrationProfile() is null ? "Uncalibrated" : "No measurement";
+            MeasurementChipDisplay = "No measurement";
+            MeasurementStatus = activeCalibration is null ? "Uncalibrated" : "No measurement";
             return;
         }
 
         if (measurement.Tool == InspectionTool.Angle && measurement.Points.Count >= 3)
         {
             var angle = InspectionGeometry.ThreePointAngleDegrees(measurement.Points[0], measurement.Points[1], measurement.Points[2], PreviewWidth, PreviewHeight);
-            MeasurementStatus = ActiveCalibrationProfile() is null ? $"Angle {angle:0.#} deg - Uncalibrated" : $"Angle {angle:0.#} deg";
+            MeasurementChipDisplay = $"Angle {angle:0.#}°";
+            MeasurementStatus = activeCalibration is null ? $"{MeasurementChipDisplay} · Uncalibrated" : MeasurementChipDisplay;
             return;
         }
 
-        var result = _calibrationCalculator.MeasureDistance(measurement.Points[0], measurement.Points[^1], PreviewWidth, PreviewHeight, ActiveCalibrationProfile());
-        MeasurementStatus = result.IsCalibrated && result.RealLength is not null
-            ? $"{result.RealLength:0.###} {UnitLabel(result.Units)} at {result.AngleDegrees:0.#} deg"
-            : "Uncalibrated";
+        var result = _calibrationCalculator.MeasureDistance(measurement.Points[0], measurement.Points[^1], PreviewWidth, PreviewHeight, activeCalibration);
+        if (result.IsCalibrated && result.RealLength is not null)
+        {
+            MeasurementChipDisplay = $"{result.RealLength:0.###} {UnitLabel(result.Units)}";
+            MeasurementStatus = $"{result.RealLength:0.###} {UnitLabel(result.Units)} at {result.AngleDegrees:0.#}°";
+            return;
+        }
+
+        MeasurementChipDisplay = "Distance";
+        MeasurementStatus = "Uncalibrated";
     }
 
     private InspectionDocument CreateInspectionDocument(string? cleanFramePath, string? annotatedFramePath) => new()
@@ -1180,6 +1216,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
 
         SelectedCalibrationProfile = VisibleCalibrationProfiles.FirstOrDefault(profile => profile.ProfileKey == selectedKey);
+        OnPropertyChanged(nameof(HasVisibleCalibrationProfiles));
+        OnPropertyChanged(nameof(HasNoVisibleCalibrationProfiles));
+        OnPropertyChanged(nameof(HasSelectedCalibrationProfile));
     }
 
     private CalibrationProfile? ActiveCalibrationProfile() =>

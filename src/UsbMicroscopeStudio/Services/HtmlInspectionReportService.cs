@@ -223,7 +223,7 @@ public sealed class HtmlInspectionReportService
         value.HasValue ? value.Value.ToString("0.###", CultureInfo.InvariantCulture) : "-";
 
     private static string FormatAngle(double? value) =>
-        value.HasValue ? $"{value.Value:0.###} deg" : "-";
+        value.HasValue ? $"{value.Value:0.###}°" : "-";
 
     private static string FormatRealLength(MeasurementResult? measurement)
     {

@@ -134,7 +134,7 @@ public sealed class HtmlInspectionReportServiceTests : IDisposable
         Assert.Contains("<td>Angle</td>", html);
         Assert.Contains("42.25", html);
         Assert.Contains("0.423 mm", html);
-        Assert.Contains("87.5 deg", html);
+        Assert.Contains("87.5&#176;", html);
     }
 
     [Fact]

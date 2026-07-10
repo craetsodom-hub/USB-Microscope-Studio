@@ -76,7 +76,11 @@ Covered by unit tests:
 28. Confirm the session header shows only real project/customer/device/camera state and contains no PR names, branch names, smoke-test names, or debug wording.
 29. Confirm the bottom status bar shows concise professional status text and does not expose raw full paths across the bar.
 30. Confirm text does not overlap or clip in the default window, maximized window, and fullscreen preview workflow.
-31. Confirm the updated full-window screenshot under `docs/screenshots` reflects the current premium UI.
+31. Confirm Demo Mode centers the synthetic microscope target in the preview without a large empty gray region.
+32. Confirm text annotations and angle labels are readable on the microscope image, use the degree symbol, and do not visually collide with angle rays in normal use.
+33. Confirm the preview header uses separate concise chips for zoom, rotation, measurement, and calibration state.
+34. Confirm an empty calibration profile list shows `No saved profiles` and disables unusable profile actions.
+35. Confirm the updated full-window screenshots under `docs/screenshots` cover Camera, Inspect with text and angle visible, Calibration, and Export after report generation.
 
 Release-polish task not covered by this PR:
 

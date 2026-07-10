@@ -96,6 +96,7 @@ public sealed class InspectionFrameRenderer
         var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(annotation.StrokeColor));
         var pen = new Pen(brush, annotation.StrokeThickness);
         var points = annotation.Points.Select(point => InspectionGeometry.ToViewport(point, width, height)).ToList();
+        var bounds = new Rect(0, 0, width, height);
 
         switch (annotation.Tool)
         {
@@ -114,13 +115,13 @@ public sealed class InspectionFrameRenderer
 
                 break;
             case InspectionTool.Text:
-                drawingContext.DrawText(new FormattedText(annotation.Text ?? string.Empty, System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), 18, brush, 1), points[0]);
+                DrawLabel(drawingContext, annotation.Text ?? string.Empty, points[0], brush, 18, FontWeights.SemiBold, center: false, bounds);
                 break;
             case InspectionTool.Arrow:
                 DrawLineOrArrow(drawingContext, pen, points, true);
                 break;
             case InspectionTool.Angle:
-                DrawAngle(drawingContext, pen, brush, points);
+                DrawAngle(drawingContext, pen, brush, points, bounds);
                 break;
             default:
                 DrawLineOrArrow(drawingContext, pen, points, false);
@@ -149,7 +150,7 @@ public sealed class InspectionFrameRenderer
         drawingContext.DrawLine(pen, points[^1], right);
     }
 
-    private static void DrawAngle(DrawingContext drawingContext, Pen pen, Brush brush, IReadOnlyList<Point> points)
+    private static void DrawAngle(DrawingContext drawingContext, Pen pen, Brush brush, IReadOnlyList<Point> points, Rect bounds)
     {
         if (points.Count < 3)
         {
@@ -179,8 +180,43 @@ public sealed class InspectionFrameRenderer
         geometry.Freeze();
         drawingContext.DrawGeometry(null, pen, geometry);
         var labelAngle = startAngle + (sweep / 2);
-        var labelPoint = new Point(vertex.X + Math.Cos(labelAngle) * (radius + 14), vertex.Y + Math.Sin(labelAngle) * (radius + 14));
-        drawingContext.DrawText(new FormattedText($"{Math.Abs(sweep * 180d / Math.PI):0.#} deg", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI Semibold"), 14, brush, 1), labelPoint);
+        var labelPoint = new Point(vertex.X + Math.Cos(labelAngle) * (radius + 24), vertex.Y + Math.Sin(labelAngle) * (radius + 24));
+        DrawLabel(drawingContext, $"{Math.Abs(sweep * 180d / Math.PI):0.#}°", labelPoint, brush, 14, FontWeights.SemiBold, center: true, bounds);
+    }
+
+    private static void DrawLabel(DrawingContext drawingContext, string text, Point origin, Brush foreground, double fontSize, FontWeight weight, bool center, Rect bounds)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return;
+        }
+
+        var formatted = new FormattedText(
+            text,
+            System.Globalization.CultureInfo.CurrentCulture,
+            FlowDirection.LeftToRight,
+            new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, weight, FontStretches.Normal),
+            fontSize,
+            foreground,
+            1);
+
+        const double horizontalPadding = 6;
+        const double verticalPadding = 3;
+        var x = center ? origin.X - (formatted.Width / 2) : origin.X;
+        var y = center ? origin.Y - (formatted.Height / 2) : origin.Y;
+        x = Math.Clamp(x, bounds.Left + 2, Math.Max(bounds.Left + 2, bounds.Right - formatted.Width - (horizontalPadding * 2) - 2));
+        y = Math.Clamp(y, bounds.Top + 2, Math.Max(bounds.Top + 2, bounds.Bottom - formatted.Height - (verticalPadding * 2) - 2));
+
+        var rect = new Rect(
+            new Point(x - horizontalPadding, y - verticalPadding),
+            new Size(formatted.Width + (horizontalPadding * 2), formatted.Height + (verticalPadding * 2)));
+        var background = new SolidColorBrush(Color.FromArgb(218, 7, 11, 16));
+        var border = new Pen(new SolidColorBrush(Color.FromArgb(170, 116, 145, 168)), 1);
+        var halo = new SolidColorBrush(Color.FromArgb(80, 0, 0, 0));
+
+        drawingContext.DrawRoundedRectangle(halo, null, new Rect(rect.X + 1, rect.Y + 1, rect.Width, rect.Height), 4, 4);
+        drawingContext.DrawRoundedRectangle(background, border, rect, 4, 4);
+        drawingContext.DrawText(formatted, new Point(x, y));
     }
 
     private static double NormalizeSweep(double sweep)
