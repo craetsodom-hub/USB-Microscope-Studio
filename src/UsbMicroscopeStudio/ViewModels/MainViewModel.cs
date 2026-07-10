@@ -91,6 +91,26 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     public ObservableCollection<RecentSessionEntry> RecentSessions { get; } = [];
 
+    public string SessionDisplay => DisplayOrUntitled(SessionName);
+
+    public string CustomerDisplay => DisplayOrNotSpecified(CustomerName);
+
+    public string DeviceDisplay => DisplayOrNotSpecified(DeviceModel);
+
+    public string CurrentSessionJsonDisplay => string.IsNullOrWhiteSpace(CurrentSessionJsonPath) ? "Unsaved" : "Saved";
+
+    public string LastReportDisplay => string.IsNullOrWhiteSpace(LastReportPath) ? "Not exported" : "Ready";
+
+    public string LastReportFileDisplay => DisplayPathLeaf(LastReportPath, "No report exported");
+
+    public string LastSnapshotFileDisplay => DisplayPathLeaf(LastSnapshotPath, "No capture saved");
+
+    public string SnapshotFolderDisplay => DisplayPathLeaf(SnapshotFolderPath, "No folder selected");
+
+    public string CurrentSessionFolderDisplay => DisplayPathLeaf(CurrentSessionFolderPath, "No session folder");
+
+    public string StatusSummary => FormatStatusSummary(StatusMessage);
+
     public IReadOnlyList<InspectionTool> ToolChoices { get; } =
     [
         InspectionTool.Select,
@@ -296,9 +316,30 @@ public partial class MainViewModel : ObservableObject, IDisposable
         SyncAnnotationsToDisplayedFrameTransform();
     }
 
+    partial void OnStatusMessageChanged(string value) => OnPropertyChanged(nameof(StatusSummary));
+
     partial void OnSnapshotFolderPathChanged(string value)
     {
         _settingsStore.Save(new AppSettings(value));
+        OnPropertyChanged(nameof(SnapshotFolderDisplay));
+    }
+
+    partial void OnSessionNameChanged(string value) => OnPropertyChanged(nameof(SessionDisplay));
+
+    partial void OnCustomerNameChanged(string value) => OnPropertyChanged(nameof(CustomerDisplay));
+
+    partial void OnDeviceModelChanged(string value) => OnPropertyChanged(nameof(DeviceDisplay));
+
+    partial void OnCurrentSessionFolderPathChanged(string? value) => OnPropertyChanged(nameof(CurrentSessionFolderDisplay));
+
+    partial void OnCurrentSessionJsonPathChanged(string? value) => OnPropertyChanged(nameof(CurrentSessionJsonDisplay));
+
+    partial void OnLastSnapshotPathChanged(string? value) => OnPropertyChanged(nameof(LastSnapshotFileDisplay));
+
+    partial void OnLastReportPathChanged(string? value)
+    {
+        OnPropertyChanged(nameof(LastReportDisplay));
+        OnPropertyChanged(nameof(LastReportFileDisplay));
     }
 
     partial void OnSelectedCalibrationProfileChanged(CalibrationProfile? value)
@@ -448,7 +489,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     public void ChooseSnapshotFolder()
     {
-        var selectedFolder = _folderPickerService.PickFolder(SnapshotFolderPath);
+        var selectedFolder = _folderPickerService.PickFolder(SnapshotFolderPath, "Select snapshot folder");
         if (string.IsNullOrWhiteSpace(selectedFolder))
         {
             return;
@@ -496,7 +537,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public void SaveSessionAs()
     {
         var initialFolder = string.IsNullOrWhiteSpace(WorkspaceFolderPath) ? SnapshotFolderPath : WorkspaceFolderPath;
-        var selectedFolder = _folderPickerService.PickFolder(initialFolder);
+        var selectedFolder = _folderPickerService.PickFolder(initialFolder, "Select session workspace folder");
         if (string.IsNullOrWhiteSpace(selectedFolder))
         {
             return;
@@ -1054,6 +1095,70 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
 
         _recentSessionStore.Save(RecentSessions);
+    }
+
+    private static string DisplayOrNotSpecified(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? "Not specified" : value;
+
+    private static string DisplayOrUntitled(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? "Untitled inspection" : value;
+
+    private static string DisplayPathLeaf(string? path, string emptyText)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return emptyText;
+        }
+
+        try
+        {
+            var leaf = Path.GetFileName(Path.TrimEndingDirectorySeparator(path));
+            return string.IsNullOrWhiteSpace(leaf) ? path : leaf;
+        }
+        catch (Exception)
+        {
+            return path;
+        }
+    }
+
+    private static string FormatStatusSummary(string? status)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+        {
+            return "Ready";
+        }
+
+        var text = status.Trim();
+        if (TryCompactStatusWithPath(text, "Snapshot saved:", "Capture saved", out var compact) ||
+            TryCompactStatusWithPath(text, "Snapshot folder:", "Capture folder", out compact) ||
+            TryCompactStatusWithPath(text, "Session saved:", "Session saved", out compact) ||
+            TryCompactStatusWithPath(text, "Session opened:", "Session opened", out compact) ||
+            TryCompactStatusWithPath(text, "Inspection opened:", "Inspection opened", out compact) ||
+            TryCompactStatusWithPath(text, "Inspection sidecar saved:", "Inspection JSON saved", out compact) ||
+            TryCompactStatusWithPath(text, "Annotated frame saved:", "Annotated frame saved", out compact) ||
+            TryCompactStatusWithPath(text, "HTML report exported:", "Report exported", out compact) ||
+            TryCompactStatusWithPath(text, "Opened report:", "Report opened", out compact))
+        {
+            return compact;
+        }
+
+        const int maximumStatusLength = 140;
+        return text.Length <= maximumStatusLength ? text : $"{text[..(maximumStatusLength - 3)]}...";
+    }
+
+    private static bool TryCompactStatusWithPath(string text, string prefix, string label, out string compact)
+    {
+        compact = string.Empty;
+        if (!text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var path = text[prefix.Length..].Trim();
+        compact = string.IsNullOrWhiteSpace(path)
+            ? label
+            : $"{label}: {DisplayPathLeaf(path, path)}";
+        return true;
     }
 
     private void ReplaceCalibrationProfile(CalibrationProfile oldProfile, CalibrationProfile newProfile)

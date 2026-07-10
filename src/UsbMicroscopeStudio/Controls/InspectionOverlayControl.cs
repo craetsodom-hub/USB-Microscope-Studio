@@ -68,7 +68,7 @@ public sealed class InspectionOverlayControl : FrameworkElement
     private InspectionPoint? _dragStart;
     private Guid? _selectedAnnotationId;
     private bool _isMovingSelection;
-    private UIElement? _inputHost;
+    private readonly List<UIElement> _inputHosts = [];
 
     public InspectionOverlayControl()
     {
@@ -136,32 +136,46 @@ public sealed class InspectionOverlayControl : FrameworkElement
         set => SetValue(CaptureHistoryCommandProperty, value);
     }
 
+    internal Func<string?, string?>? TextPromptOverride { get; set; }
+
+    internal int InputHostCountForTesting => _inputHosts.Count;
+
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        AttachInputHost(Parent as UIElement);
+        AttachInputHosts();
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
-        AttachInputHost(null);
+        DetachInputHosts();
     }
 
-    private void AttachInputHost(UIElement? inputHost)
+    private void AttachInputHosts()
     {
-        if (_inputHost is not null)
+        DetachInputHosts();
+
+        for (DependencyObject? current = VisualTreeHelper.GetParent(this); current is not null; current = VisualTreeHelper.GetParent(current))
         {
-            _inputHost.RemoveHandler(PreviewMouseDownEvent, new MouseButtonEventHandler(OnInputHostPreviewMouseDown));
-            _inputHost.RemoveHandler(PreviewMouseMoveEvent, new MouseEventHandler(OnInputHostPreviewMouseMove));
-            _inputHost.RemoveHandler(PreviewMouseUpEvent, new MouseButtonEventHandler(OnInputHostPreviewMouseUp));
+            if (current is UIElement inputHost)
+            {
+                inputHost.AddHandler(PreviewMouseDownEvent, new MouseButtonEventHandler(OnInputHostPreviewMouseDown), true);
+                inputHost.AddHandler(PreviewMouseMoveEvent, new MouseEventHandler(OnInputHostPreviewMouseMove), true);
+                inputHost.AddHandler(PreviewMouseUpEvent, new MouseButtonEventHandler(OnInputHostPreviewMouseUp), true);
+                _inputHosts.Add(inputHost);
+            }
+        }
+    }
+
+    private void DetachInputHosts()
+    {
+        foreach (var inputHost in _inputHosts)
+        {
+            inputHost.RemoveHandler(PreviewMouseDownEvent, new MouseButtonEventHandler(OnInputHostPreviewMouseDown));
+            inputHost.RemoveHandler(PreviewMouseMoveEvent, new MouseEventHandler(OnInputHostPreviewMouseMove));
+            inputHost.RemoveHandler(PreviewMouseUpEvent, new MouseButtonEventHandler(OnInputHostPreviewMouseUp));
         }
 
-        _inputHost = inputHost;
-        if (_inputHost is not null)
-        {
-            _inputHost.AddHandler(PreviewMouseDownEvent, new MouseButtonEventHandler(OnInputHostPreviewMouseDown), true);
-            _inputHost.AddHandler(PreviewMouseMoveEvent, new MouseEventHandler(OnInputHostPreviewMouseMove), true);
-            _inputHost.AddHandler(PreviewMouseUpEvent, new MouseButtonEventHandler(OnInputHostPreviewMouseUp), true);
-        }
+        _inputHosts.Clear();
     }
 
     private static void OnAnnotationsChanged(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs e)
@@ -205,12 +219,19 @@ public sealed class InspectionOverlayControl : FrameworkElement
     {
         Focus();
         var point = ToInspectionPoint(e.GetPosition(this));
+        HandlePrimaryPoint(point, e.ClickCount);
+    }
+
+    internal void HandlePreviewPointForTesting(Point point) => HandlePrimaryPoint(ToInspectionPoint(point), clickCount: 1);
+
+    private void HandlePrimaryPoint(InspectionPoint point, int clickCount)
+    {
         _dragStart = point;
 
         if (CurrentTool == InspectionTool.Select)
         {
             _selectedAnnotationId = HitTest(point);
-            if (_selectedAnnotationId is not null && e.ClickCount == 2)
+            if (_selectedAnnotationId is not null && clickCount == 2)
             {
                 EditSelectedTextAnnotation();
                 return;
@@ -270,6 +291,11 @@ public sealed class InspectionOverlayControl : FrameworkElement
 
     private void OnInputHostPreviewMouseDown(object sender, MouseButtonEventArgs e)
     {
+        if (e.Handled)
+        {
+            return;
+        }
+
         if (!IsInsideOverlay(e.GetPosition(this)))
         {
             return;
@@ -281,6 +307,11 @@ public sealed class InspectionOverlayControl : FrameworkElement
 
     private void OnInputHostPreviewMouseMove(object sender, MouseEventArgs e)
     {
+        if (e.Handled)
+        {
+            return;
+        }
+
         if (!IsMouseCaptured && !IsInsideOverlay(e.GetPosition(this)))
         {
             return;
@@ -295,6 +326,11 @@ public sealed class InspectionOverlayControl : FrameworkElement
 
     private void OnInputHostPreviewMouseUp(object sender, MouseButtonEventArgs e)
     {
+        if (e.Handled)
+        {
+            return;
+        }
+
         if (!IsMouseCaptured && !IsInsideOverlay(e.GetPosition(this)))
         {
             return;
@@ -662,6 +698,11 @@ public sealed class InspectionOverlayControl : FrameworkElement
 
     private string? PromptForText(string? initialValue)
     {
+        if (TextPromptOverride is not null)
+        {
+            return TextPromptOverride(initialValue);
+        }
+
         var textBox = new TextBox
         {
             Text = initialValue ?? string.Empty,

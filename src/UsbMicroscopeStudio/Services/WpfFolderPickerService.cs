@@ -5,11 +5,11 @@ namespace UsbMicroscopeStudio.Services;
 
 public sealed class WpfFolderPickerService : IFolderPickerService
 {
-    public string? PickFolder(string initialDirectory)
+    public string? PickFolder(string initialDirectory, string title = "Select folder")
     {
         var dialog = new OpenFolderDialog
         {
-            Title = "Select snapshot folder",
+            Title = string.IsNullOrWhiteSpace(title) ? "Select folder" : title,
             InitialDirectory = Directory.Exists(initialDirectory) ? initialDirectory : Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)
         };
 
