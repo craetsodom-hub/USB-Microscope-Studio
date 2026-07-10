@@ -2,7 +2,7 @@
 
 ## UI Direction
 
-The interface is built for technicians who repeatedly inspect live video, not for marketing presentation. Phase 3C moves the app to a premium dark graphite visual system with high-contrast preview, compact command surfaces, subtle borders, aligned inputs, and status badges that read like professional camera, lab, and inspection software.
+The interface is built for technicians who repeatedly inspect live video, not for marketing presentation. Phase 3C moves the app to a premium dark graphite visual system with high-contrast preview, compact command surfaces, subtle borders, aligned inputs, and status badges that read like professional camera, lab, and inspection software. Phase 3D tightens production visual QA: Demo Mode is composed for balanced screenshots, preview chips are concise, annotation labels are readable on dark microscope frames, and status surfaces avoid exposing raw folder slugs as primary text.
 
 ## Layout
 
@@ -23,6 +23,7 @@ The interface is built for technicians who repeatedly inspect live video, not fo
 - Scrollbars: dark graphite styling replaces default white Windows scrollbars in the control workspace.
 - Inputs: compact, aligned labels and fields designed for repeated technician entry rather than large marketing forms.
 - Buttons: consistent dark templates with clear hover/pressed/disabled states. Header actions use a compact command style; rail actions retain larger touch targets.
+- Calibration controls: empty profile lists show `No saved profiles`; actions that require a selected profile are disabled until usable.
 - Panels: 6px corner radius maximum, subtle borders, no glassmorphism, no decorative gradients, no oversized hero treatment.
 - App icon: a production multi-size `.ico` brand mark remains a release-polish requirement. This PR avoids adding a placeholder icon without an approved product mark.
 
@@ -37,6 +38,7 @@ The interface is built for technicians who repeatedly inspect live video, not fo
 - Overlays are vector drawn from normalized image coordinates so they remain sharp and aligned while zooming, rotating, mirroring, changing resolution, and entering fullscreen.
 - Angle annotations use three operator clicks: first ray endpoint, vertex, and second ray endpoint. The app renders both rays, an arc, and the angle in degrees.
 - Text annotations prompt for operator-entered text and can be edited by selecting and double-clicking the text mark.
+- Text and angle labels use compact high-contrast tag treatment so they stay readable on dark or gray microscope imagery and in saved annotated images.
 - Measurements clearly display `Uncalibrated` until a calibration profile matching the current camera and format is active.
 - Open inspection restores a JSON sidecar's clean frame and editable annotations. Calibration is restored only when it is valid for the current camera and format.
 - Escape exits fullscreen.

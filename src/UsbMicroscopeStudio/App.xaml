@@ -124,7 +124,10 @@
                                 <Setter TargetName="Root" Property="Background" Value="#102033" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.45" />
+                                <Setter TargetName="Root" Property="Background" Value="#141C25" />
+                                <Setter TargetName="Root" Property="BorderBrush" Value="#26313D" />
+                                <Setter Property="Foreground" Value="#687786" />
+                                <Setter Property="Cursor" Value="Arrow" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -144,8 +147,9 @@
         </Style>
 
         <Style x:Key="DangerButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-            <Setter Property="Background" Value="#301C22" />
-            <Setter Property="BorderBrush" Value="#7D3A45" />
+            <Setter Property="Background" Value="#1A2633" />
+            <Setter Property="BorderBrush" Value="{StaticResource PanelBorderStrongBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
         </Style>
 
         <Style x:Key="CompactCommandButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
@@ -158,6 +162,18 @@
             <Setter Property="MinHeight" Value="28" />
             <Setter Property="Padding" Value="10,4" />
             <Setter Property="FontSize" Value="12" />
+        </Style>
+
+        <Style x:Key="CompactPanelCardStyle" TargetType="Border" BasedOn="{StaticResource PanelCardStyle}">
+            <Setter Property="Padding" Value="10" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+        </Style>
+
+        <Style x:Key="InlineUtilityButtonStyle" TargetType="Button" BasedOn="{StaticResource QuietButtonStyle}">
+            <Setter Property="MinHeight" Value="28" />
+            <Setter Property="Padding" Value="9,4" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Margin" Value="0" />
         </Style>
 
         <Style TargetType="TextBox">
@@ -349,16 +365,16 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Thumb">
                         <Border x:Name="Root"
-                                Background="#344556"
-                                BorderBrush="#405466"
-                                BorderThickness="1"
-                                CornerRadius="4" />
+                                Background="#2A3743"
+                                BorderBrush="Transparent"
+                                BorderThickness="0"
+                                CornerRadius="3" />
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Root" Property="Background" Value="#41586B" />
+                                <Setter TargetName="Root" Property="Background" Value="#415565" />
                             </Trigger>
                             <Trigger Property="IsDragging" Value="True">
-                                <Setter TargetName="Root" Property="Background" Value="#4D6B82" />
+                                <Setter TargetName="Root" Property="Background" Value="#58718A" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -367,14 +383,14 @@
         </Style>
 
         <Style TargetType="ScrollBar">
-            <Setter Property="Background" Value="#0D141C" />
-            <Setter Property="Width" Value="10" />
-            <Setter Property="MinWidth" Value="10" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Width" Value="6" />
+            <Setter Property="MinWidth" Value="6" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ScrollBar">
                         <Grid x:Name="Root" Background="{TemplateBinding Background}">
-                            <Track x:Name="PART_Track" IsDirectionReversed="True">
+                            <Track x:Name="PART_Track" IsDirectionReversed="True" Margin="1,4">
                                 <Track.DecreaseRepeatButton>
                                     <RepeatButton Command="ScrollBar.PageUpCommand" Style="{StaticResource InvisibleScrollRepeatButtonStyle}" />
                                 </Track.DecreaseRepeatButton>
@@ -388,8 +404,8 @@
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="Orientation" Value="Horizontal">
-                                <Setter Property="Height" Value="10" />
-                                <Setter Property="MinHeight" Value="10" />
+                                <Setter Property="Height" Value="6" />
+                                <Setter Property="MinHeight" Value="6" />
                                 <Setter Property="Width" Value="Auto" />
                                 <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False" />
                             </Trigger>
@@ -408,32 +424,42 @@
             <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="Padding" Value="7,6" />
-            <Setter Property="Margin" Value="0,0,2,0" />
+            <Setter Property="Padding" Value="8,6" />
+            <Setter Property="Margin" Value="0,0,3,0" />
             <Setter Property="FontSize" Value="12" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TabItem">
-                        <Border x:Name="Root"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="1"
-                                CornerRadius="4"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter ContentSource="Header"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center" />
-                        </Border>
+                        <Grid>
+                            <Border x:Name="Root"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter ContentSource="Header"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center" />
+                            </Border>
+                            <Border x:Name="Indicator"
+                                    Height="2"
+                                    Background="{StaticResource AccentStrongBrush}"
+                                    CornerRadius="1"
+                                    Margin="8,0"
+                                    VerticalAlignment="Bottom"
+                                    Visibility="Collapsed" />
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
-                                <Setter TargetName="Root" Property="Background" Value="#172331" />
-                                <Setter TargetName="Root" Property="BorderBrush" Value="#33475A" />
+                                <Setter TargetName="Root" Property="Background" Value="#141F2A" />
+                                <Setter TargetName="Root" Property="BorderBrush" Value="#2E4151" />
+                                <Setter TargetName="Indicator" Property="Visibility" Value="Visible" />
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Root" Property="Background" Value="#141F2A" />
-                                <Setter TargetName="Root" Property="BorderBrush" Value="#2F4354" />
+                                <Setter TargetName="Root" Property="Background" Value="#172331" />
+                                <Setter TargetName="Root" Property="BorderBrush" Value="#33495C" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>

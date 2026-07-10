@@ -217,9 +217,9 @@ public sealed class OpenCvCameraPreviewService : ICameraPreviewService
         var height = Math.Max(240, format.Height);
         var stride = width * 4;
         var pixels = new byte[height * stride];
-        var centerX = width * 0.28d;
+        var centerX = width / 2d;
         var centerY = height / 2d;
-        var radius = Math.Min(width, height) / 3.2d;
+        var radius = Math.Min(width, height) / 3.35d;
         var sweepAngle = frameIndex * 4 * Math.PI / 180d;
 
         for (var y = 0; y < height; y++)
