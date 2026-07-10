@@ -121,50 +121,65 @@
                         <TabItem Header="Camera">
                             <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,8,0,0">
                                 <StackPanel>
-                                    <Border Style="{StaticResource PanelCardStyle}">
+                                    <Border Style="{StaticResource CompactPanelCardStyle}">
                                         <StackPanel>
-                                            <TextBlock Text="Source" Style="{StaticResource SectionTitleStyle}" />
-                                            <TextBlock Text="Camera" Style="{StaticResource FieldLabelStyle}" />
-                                            <ComboBox ItemsSource="{Binding Cameras}" SelectedItem="{Binding SelectedCamera}" DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="CameraSelector" />
-                                            <TextBlock Text="Resolution / FPS" Style="{StaticResource FieldLabelStyle}" />
-                                            <ComboBox ItemsSource="{Binding Formats}" SelectedItem="{Binding SelectedFormat}" DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="FormatSelector" />
-                                            <UniformGrid Columns="3" Margin="0,8,0,0">
-                                                <Button Content="Start" Command="{Binding StartPreviewCommand}" Style="{StaticResource PrimaryButtonStyle}" AutomationProperties.AutomationId="RailStartPreviewButton" />
-                                                <Button Content="Stop" Command="{Binding StopPreviewCommand}" AutomationProperties.AutomationId="RailStopPreviewButton" />
-                                                <Button Content="Refresh" Command="{Binding RefreshCamerasCommand}" />
-                                            </UniformGrid>
+                                            <Grid Margin="0,0,0,3">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Source" Style="{StaticResource SectionTitleStyle}" Margin="0" VerticalAlignment="Center" />
+                                                <Button Grid.Column="1" Content="Refresh sources" Command="{Binding RefreshCamerasCommand}" Style="{StaticResource InlineUtilityButtonStyle}" AutomationProperties.AutomationId="RailStartPreviewButton" />
+                                            </Grid>
+                                            <TextBlock Text="Camera" Style="{StaticResource FieldLabelStyle}" Margin="0,4,0,3" />
+                                            <ComboBox ItemsSource="{Binding Cameras}" SelectedItem="{Binding SelectedCamera}" DisplayMemberPath="DisplayName" Margin="0,0,0,4" AutomationProperties.AutomationId="CameraSelector" />
+                                            <TextBlock Text="Resolution / FPS" Style="{StaticResource FieldLabelStyle}" Margin="0,4,0,3" />
+                                            <ComboBox ItemsSource="{Binding Formats}" SelectedItem="{Binding SelectedFormat}" DisplayMemberPath="DisplayName" Margin="0" AutomationProperties.AutomationId="FormatSelector" />
                                         </StackPanel>
                                     </Border>
 
-                                    <Border Style="{StaticResource PanelCardStyle}">
-                                        <StackPanel>
-                                            <TextBlock Text="Capture" Style="{StaticResource SectionTitleStyle}" />
-                                            <UniformGrid Columns="2">
-                                                <Button Content="Capture" Command="{Binding SnapshotCommand}" AutomationProperties.AutomationId="RailSnapshotButton" />
-                                                <Button Content="Fullscreen" Command="{Binding ToggleFullscreenCommand}" AutomationProperties.AutomationId="RailFullscreenButton" />
-                                            </UniformGrid>
-                                            <TextBlock Text="Capture folder" Style="{StaticResource FieldLabelStyle}" />
-                                            <Button Content="Choose folder" Command="{Binding ChooseSnapshotFolderCommand}" AutomationProperties.AutomationId="ChooseSnapshotFolderButton" />
-                                            <TextBlock Text="{Binding SnapshotFolderDisplay}" ToolTip="{Binding SnapshotFolderPath}" TextTrimming="CharacterEllipsis" Style="{StaticResource MutedTextStyle}" Margin="3,4,3,0" AutomationProperties.AutomationId="SnapshotFolderPathText" />
-                                        </StackPanel>
+                                    <Border Style="{StaticResource CompactPanelCardStyle}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel>
+                                                <TextBlock Text="Capture destination" Style="{StaticResource SectionTitleStyle}" Margin="0,0,0,3" />
+                                                <TextBlock Text="{Binding SnapshotFolderDisplay, StringFormat=Folder: {0}}" ToolTip="{Binding SnapshotFolderPath}" TextTrimming="CharacterEllipsis" Style="{StaticResource MutedTextStyle}" AutomationProperties.AutomationId="SnapshotFolderPathText" />
+                                            </StackPanel>
+                                            <Button Grid.Column="1" Content="Choose folder" Command="{Binding ChooseSnapshotFolderCommand}" Style="{StaticResource InlineUtilityButtonStyle}" VerticalAlignment="Center" AutomationProperties.AutomationId="ChooseSnapshotFolderButton" />
+                                        </Grid>
                                     </Border>
 
-                                    <Border Style="{StaticResource PanelCardStyle}">
+                                    <Border Style="{StaticResource CompactPanelCardStyle}">
                                         <StackPanel>
-                                            <TextBlock Text="View" Style="{StaticResource SectionTitleStyle}" />
+                                            <Grid Margin="0,0,0,3">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="View" Style="{StaticResource SectionTitleStyle}" Margin="0" VerticalAlignment="Center" />
+                                                <TextBlock Grid.Column="1" Text="{Binding ZoomLevel, StringFormat=Zoom {0:0.00}x}" Style="{StaticResource MutedTextStyle}" VerticalAlignment="Center" AutomationProperties.AutomationId="ZoomReadout" />
+                                            </Grid>
                                             <UniformGrid Columns="3">
-                                                <Button Content="-" Command="{Binding ZoomOutCommand}" AutomationProperties.AutomationId="ZoomOutButton" />
-                                                <Button Content="+" Command="{Binding ZoomInCommand}" AutomationProperties.AutomationId="ZoomInButton" />
-                                                <Button Content="Reset" Command="{Binding ResetViewCommand}" AutomationProperties.AutomationId="ResetViewButton" />
+                                                <Button Content="-" Command="{Binding ZoomOutCommand}" MinHeight="28" Margin="1" AutomationProperties.AutomationId="ZoomOutButton" />
+                                                <Button Content="+" Command="{Binding ZoomInCommand}" MinHeight="28" Margin="1" AutomationProperties.AutomationId="ZoomInButton" />
+                                                <Button Content="Reset" Command="{Binding ResetViewCommand}" MinHeight="28" Margin="1" AutomationProperties.AutomationId="ResetViewButton" />
                                             </UniformGrid>
-                                            <Slider Minimum="0.25" Maximum="4" TickFrequency="0.25" Value="{Binding ZoomLevel}" AutomationProperties.AutomationId="ZoomSlider" />
-                                            <TextBlock Text="{Binding ZoomLevel, StringFormat=Zoom {0:0.00}x}" Style="{StaticResource MutedTextStyle}" AutomationProperties.AutomationId="ZoomReadout" />
-                                            <UniformGrid Columns="2" Margin="0,10,0,2">
-                                                <Button Content="Rotate Left" Command="{Binding RotateLeftCommand}" AutomationProperties.AutomationId="RotateLeftButton" />
-                                                <Button Content="Rotate Right" Command="{Binding RotateRightCommand}" AutomationProperties.AutomationId="RotateRightButton" />
+                                            <Slider Minimum="0.25" Maximum="4" TickFrequency="0.25" Value="{Binding ZoomLevel}" Margin="0,2,0,3" AutomationProperties.AutomationId="ZoomSlider" />
+                                            <UniformGrid Columns="2" Margin="0,1,0,1">
+                                                <Button Content="Rotate Left" Command="{Binding RotateLeftCommand}" MinHeight="28" Margin="1" AutomationProperties.AutomationId="RotateLeftButton" />
+                                                <Button Content="Rotate Right" Command="{Binding RotateRightCommand}" MinHeight="28" Margin="1" AutomationProperties.AutomationId="RotateRightButton" />
                                             </UniformGrid>
-                                            <CheckBox Content="Mirror horizontal" IsChecked="{Binding IsMirrored}" AutomationProperties.AutomationId="MirrorToggle" />
-                                            <CheckBox Content="Freeze preview" IsChecked="{Binding IsFrozen}" AutomationProperties.AutomationId="FreezeToggle" />
+                                            <Grid Margin="0,1,0,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <CheckBox Content="Mirror horizontal" IsChecked="{Binding IsMirrored}" Margin="0,1" AutomationProperties.AutomationId="MirrorToggle" />
+                                                <CheckBox Grid.Column="1" Content="Freeze preview" IsChecked="{Binding IsFrozen}" Margin="0,1" AutomationProperties.AutomationId="FreezeToggle" />
+                                            </Grid>
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
