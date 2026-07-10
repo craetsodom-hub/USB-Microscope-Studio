@@ -71,10 +71,16 @@ Covered by unit tests:
 23. Export an HTML report and confirm `reports/report-YYYYMMDD-HHMMSS.html` is created under the session folder.
 24. Open the report locally and confirm metadata, notes, calibration status/profile, clean image, annotated image, text annotation, angle measurement, and generated timestamp are readable offline.
 25. Confirm the Phase 3C dark theme uses consistent button, input, combo box, tab, panel, status badge, and status-bar styling.
-26. Confirm the control rail is grouped into Camera, Session, Inspect, Calibration, and Export tabs and no longer reads as one long unstructured form.
-27. Confirm the session header clearly shows project context, camera/format state, calibration state, session save state, and report state where space permits.
-28. Confirm text does not overlap or clip in the default window, maximized window, and fullscreen preview workflow.
-29. Confirm the updated full-window screenshot under `docs/screenshots` reflects the current premium UI.
+26. Confirm dark graphite scrollbars replace default white scrollbars in the left workspace and long notes fields.
+27. Confirm the workspace is grouped into Camera, Session, Inspect, Calibration, and Export tabs and no longer reads as one long unstructured form.
+28. Confirm the session header shows only real project/customer/device/camera state and contains no PR names, branch names, smoke-test names, or debug wording.
+29. Confirm the bottom status bar shows concise professional status text and does not expose raw full paths across the bar.
+30. Confirm text does not overlap or clip in the default window, maximized window, and fullscreen preview workflow.
+31. Confirm the updated full-window screenshot under `docs/screenshots` reflects the current premium UI.
+
+Release-polish task not covered by this PR:
+
+- Add an approved multi-size `.ico` product icon before release packaging. Do not ship a temporary placeholder icon.
 
 To force Demo Mode on machines that have a webcam attached:
 
