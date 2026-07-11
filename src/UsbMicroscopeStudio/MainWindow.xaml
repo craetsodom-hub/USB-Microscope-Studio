@@ -240,6 +240,7 @@
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
                                             </Grid.RowDefinitions>
                                             <TextBlock Text="Metadata" Style="{StaticResource SectionTitleStyle}" />
                                             <StackPanel Grid.Row="1">
@@ -250,41 +251,39 @@
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*" />
                                                     <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="*" />
                                                 </Grid.ColumnDefinitions>
-                                                <StackPanel Margin="0,0,3,0">
+                                                <StackPanel Margin="0,0,4,0">
                                                     <TextBlock Text="Customer" Style="{StaticResource FieldLabelStyle}" Margin="0,3,0,2" />
-                                                    <TextBox Text="{Binding CustomerName, UpdateSourceTrigger=PropertyChanged}" Tag="Not specified" FontSize="10" ToolTip="{Binding CustomerName}" AutomationProperties.AutomationId="CustomerNameTextBox" />
+                                                    <TextBox Text="{Binding CustomerName, UpdateSourceTrigger=PropertyChanged}" Tag="Not specified" ToolTip="{Binding CustomerName}" AutomationProperties.AutomationId="CustomerNameTextBox" />
                                                 </StackPanel>
-                                                <StackPanel Grid.Column="1" Margin="3,0,3,0">
+                                                <StackPanel Grid.Column="1" Margin="4,0,0,0">
                                                     <TextBlock Text="Device model" Style="{StaticResource FieldLabelStyle}" Margin="0,3,0,2" />
-                                                    <TextBox Text="{Binding DeviceModel, UpdateSourceTrigger=PropertyChanged}" Tag="Not specified" FontSize="10" ToolTip="{Binding DeviceModel}" AutomationProperties.AutomationId="DeviceModelTextBox" />
-                                                </StackPanel>
-                                                <StackPanel Grid.Column="2" Margin="3,0,0,0">
-                                                    <TextBlock Text="Serial / asset" Style="{StaticResource FieldLabelStyle}" Margin="0,3,0,2" />
-                                                    <TextBox Text="{Binding SerialAssetTag, UpdateSourceTrigger=PropertyChanged}" Tag="Not specified" FontSize="10" ToolTip="{Binding SerialAssetTag}" AutomationProperties.AutomationId="SerialAssetTagTextBox" />
+                                                    <TextBox Text="{Binding DeviceModel, UpdateSourceTrigger=PropertyChanged}" Tag="Not specified" ToolTip="{Binding DeviceModel}" AutomationProperties.AutomationId="DeviceModelTextBox" />
                                                 </StackPanel>
                                             </Grid>
                                             <Grid Grid.Row="3">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*" />
                                                     <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="*" />
                                                 </Grid.ColumnDefinitions>
-                                                <StackPanel Margin="0,0,3,0">
+                                                <StackPanel Margin="0,0,4,0">
+                                                    <TextBlock Text="Serial / asset tag" Style="{StaticResource FieldLabelStyle}" Margin="0,3,0,2" />
+                                                    <TextBox Text="{Binding SerialAssetTag, UpdateSourceTrigger=PropertyChanged}" Tag="Not specified" ToolTip="{Binding SerialAssetTag}" AutomationProperties.AutomationId="SerialAssetTagTextBox" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" Margin="4,0,0,0">
                                                     <TextBlock Text="Technician" Style="{StaticResource FieldLabelStyle}" Margin="0,3,0,2" />
-                                                    <TextBox Text="{Binding TechnicianName, UpdateSourceTrigger=PropertyChanged}" Tag="Not specified" FontSize="10" ToolTip="{Binding TechnicianName}" AutomationProperties.AutomationId="TechnicianNameTextBox" />
-                                                </StackPanel>
-                                                <StackPanel Grid.Column="1" Margin="3,0,3,0">
-                                                    <TextBlock Text="Job / order" Style="{StaticResource FieldLabelStyle}" Margin="0,3,0,2" />
-                                                    <TextBox Text="{Binding JobOrderNumber, UpdateSourceTrigger=PropertyChanged}" Tag="Not specified" FontSize="10" ToolTip="{Binding JobOrderNumber}" AutomationProperties.AutomationId="JobOrderNumberTextBox" />
-                                                </StackPanel>
-                                                <StackPanel Grid.Column="2" Margin="3,0,0,0">
-                                                    <TextBlock Text="Notes" Style="{StaticResource FieldLabelStyle}" Margin="0,3,0,2" />
-                                                    <TextBox Text="{Binding SessionNotes, UpdateSourceTrigger=PropertyChanged}" Tag="Not specified" FontSize="10" ToolTip="{Binding SessionNotes}" Height="32" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" AutomationProperties.AutomationId="SessionNotesTextBox" />
+                                                    <TextBox Text="{Binding TechnicianName, UpdateSourceTrigger=PropertyChanged}" Tag="Not specified" ToolTip="{Binding TechnicianName}" AutomationProperties.AutomationId="TechnicianNameTextBox" />
                                                 </StackPanel>
                                             </Grid>
-                                            <TextBlock Grid.Row="4" Text="{Binding CurrentSessionFolderDisplay}" ToolTip="{Binding CurrentSessionFolderPath}" TextTrimming="CharacterEllipsis" Style="{StaticResource MutedTextStyle}" Margin="0,4,0,0" AutomationProperties.AutomationId="CurrentSessionFolderText" />
+                                            <StackPanel Grid.Row="4">
+                                                <TextBlock Text="Job / order number" Style="{StaticResource FieldLabelStyle}" Margin="0,3,0,2" />
+                                                <TextBox Text="{Binding JobOrderNumber, UpdateSourceTrigger=PropertyChanged}" Tag="Not specified" ToolTip="{Binding JobOrderNumber}" AutomationProperties.AutomationId="JobOrderNumberTextBox" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="5">
+                                                <TextBlock Text="Notes" Style="{StaticResource FieldLabelStyle}" Margin="0,3,0,2" />
+                                                <TextBox Text="{Binding SessionNotes, UpdateSourceTrigger=PropertyChanged}" Tag="Not specified" ToolTip="{Binding SessionNotes}" AutomationProperties.AutomationId="SessionNotesTextBox" />
+                                            </StackPanel>
+                                            <TextBlock Grid.Row="6" Text="{Binding CurrentSessionFolderDisplay}" ToolTip="{Binding CurrentSessionFolderPath}" TextTrimming="CharacterEllipsis" Style="{StaticResource MutedTextStyle}" Margin="0,4,0,0" AutomationProperties.AutomationId="CurrentSessionFolderText" />
                                         </Grid>
                                     </Border>
                                 </StackPanel>
