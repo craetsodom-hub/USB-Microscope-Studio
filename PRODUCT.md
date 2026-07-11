@@ -1,5 +1,20 @@
 # Product
 
+## Phase 3F Release Foundation
+
+Prepare USB Microscope Studio to present as a real Windows product without expanding the inspection feature set.
+
+### Included
+
+- A professional USB microscope / inspection-target product mark in editable SVG, high-resolution PNG, and multi-size Windows ICO formats.
+- The product icon applied to the WPF title bar and the Windows executable.
+- Product metadata: USB Microscope Studio, neutral company identity, version `1.0.0`, and the professional microscope inspection workspace description.
+- A repeatable self-contained Windows x64 publish command that writes to `artifacts/release/win-x64`.
+
+### Excluded
+
+- Installer, MSIX, Microsoft Store packaging, signing, payments, licensing, and new inspection features.
+
 ## Phase 3C Goal
 
 Make USB Microscope Studio feel like a serious technician inspection product instead of a basic WPF utility. Phase 3C improves presentation quality, visual hierarchy, and control organization while preserving the existing Phase 1, Phase 2, Phase 3A, and Phase 3B workflows.

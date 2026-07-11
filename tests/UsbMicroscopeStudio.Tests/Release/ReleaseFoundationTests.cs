@@ -1,0 +1,58 @@
+using Xunit;
+
+namespace UsbMicroscopeStudio.Tests.Release;
+
+public sealed class ReleaseFoundationTests
+{
+    [Fact]
+    public void ProductIconAssets_ExistAndAreReferencedByTheProject()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var assetsDirectory = Path.Combine(repositoryRoot, "src", "UsbMicroscopeStudio", "Assets");
+        var projectFile = Path.Combine(repositoryRoot, "src", "UsbMicroscopeStudio", "UsbMicroscopeStudio.csproj");
+        var mainWindowFile = Path.Combine(repositoryRoot, "src", "UsbMicroscopeStudio", "MainWindow.xaml");
+
+        Assert.True(File.Exists(Path.Combine(assetsDirectory, "AppIcon.ico")));
+        Assert.True(File.Exists(Path.Combine(assetsDirectory, "AppIcon.png")));
+        Assert.True(File.Exists(Path.Combine(assetsDirectory, "AppIcon.svg")));
+
+        var projectContents = File.ReadAllText(projectFile);
+        Assert.Contains("<ApplicationIcon>Assets\\AppIcon.ico</ApplicationIcon>", projectContents, StringComparison.Ordinal);
+        Assert.Contains("<Content Include=\"Assets\\AppIcon.ico\">", projectContents, StringComparison.Ordinal);
+        Assert.Contains("<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>", projectContents, StringComparison.Ordinal);
+        Assert.Contains("<Product>USB Microscope Studio</Product>", projectContents, StringComparison.Ordinal);
+        Assert.Contains("<Company>USB Microscope Studio</Company>", projectContents, StringComparison.Ordinal);
+        Assert.Contains("<AssemblyDescription>Professional microscope inspection workspace</AssemblyDescription>", projectContents, StringComparison.Ordinal);
+        Assert.Contains("<Version>1.0.0</Version>", projectContents, StringComparison.Ordinal);
+        Assert.Contains("Icon=\"pack://siteoforigin:,,,/Assets/AppIcon.ico\"", File.ReadAllText(mainWindowFile), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void WindowsX64PublishScript_ExistsAndPublishesToTheReleaseFolder()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var scriptPath = Path.Combine(repositoryRoot, "scripts", "publish-win-x64.ps1");
+
+        Assert.True(File.Exists(scriptPath));
+
+        var scriptContents = File.ReadAllText(scriptPath);
+        Assert.Contains("--runtime win-x64", scriptContents, StringComparison.Ordinal);
+        Assert.Contains("artifacts\\release\\win-x64", scriptContents, StringComparison.Ordinal);
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "UsbMicroscopeStudio.slnx")))
+            {
+                return directory.FullName;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new DirectoryNotFoundException("Could not locate the repository root.");
+    }
+}
