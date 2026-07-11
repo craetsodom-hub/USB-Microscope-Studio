@@ -472,14 +472,17 @@ public sealed class InspectionOverlayControl : FrameworkElement
 
     private void DrawAnnotations(DrawingContext drawingContext)
     {
-        if (Annotations is null)
+        if (Annotations is not null)
         {
-            return;
+            foreach (var annotation in Annotations)
+            {
+                DrawAnnotation(drawingContext, annotation);
+            }
         }
 
-        foreach (var annotation in Annotations)
+        if (_activeAnnotation is { Tool: InspectionTool.Angle, Points.Count: >= 2 })
         {
-            DrawAnnotation(drawingContext, annotation);
+            DrawAnnotation(drawingContext, _activeAnnotation);
         }
     }
 
@@ -548,15 +551,19 @@ public sealed class InspectionOverlayControl : FrameworkElement
                 IsMeasurement = true,
                 Points = [point]
             };
-            Annotations?.Add(_activeAnnotation);
             InvalidateVisual();
             return;
         }
 
+        if (ArePointsEquivalent(_activeAnnotation.Points[^1], point))
+        {
+            return;
+        }
+
         _activeAnnotation = _activeAnnotation with { Points = [.. _activeAnnotation.Points, point] };
-        ReplaceAnnotation(_activeAnnotation);
         if (_activeAnnotation.Points.Count >= 3)
         {
+            Annotations?.Add(_activeAnnotation);
             _activeAnnotation = null;
         }
 
@@ -565,9 +572,8 @@ public sealed class InspectionOverlayControl : FrameworkElement
 
     private void DrawAngle(DrawingContext drawingContext, Pen pen, Brush brush, IReadOnlyList<Point> points)
     {
-        if (points.Count == 1)
+        if (points.Count < 2)
         {
-            drawingContext.DrawEllipse(brush, null, points[0], 3, 3);
             return;
         }
 
@@ -580,6 +586,16 @@ public sealed class InspectionOverlayControl : FrameworkElement
         var first = points[0];
         var vertex = points[1];
         var second = points[2];
+        if (!InspectionGeometry.HasValidThreePointAngle(
+                InspectionGeometry.FromViewport(first, ActualWidth, ActualHeight),
+                InspectionGeometry.FromViewport(vertex, ActualWidth, ActualHeight),
+                InspectionGeometry.FromViewport(second, ActualWidth, ActualHeight),
+                ActualWidth,
+                ActualHeight))
+        {
+            return;
+        }
+
         drawingContext.DrawLine(pen, vertex, first);
         drawingContext.DrawLine(pen, vertex, second);
         DrawAngleArc(drawingContext, pen, brush, first, vertex, second);
@@ -718,6 +734,9 @@ public sealed class InspectionOverlayControl : FrameworkElement
     }
 
     private static Rect RectFrom(Point a, Point b) => new(a, b);
+
+    private static bool ArePointsEquivalent(InspectionPoint first, InspectionPoint second) =>
+        Math.Abs(first.X - second.X) < 0.002 && Math.Abs(first.Y - second.Y) < 0.002;
 
     private bool IsInsideOverlay(Point point) =>
         point.X >= 0 &&

@@ -15,7 +15,7 @@
         KeyDown="Window_KeyDown">
     <Grid Background="{StaticResource SurfaceBrush}">
         <Grid.RowDefinitions>
-            <RowDefinition Height="64" />
+            <RowDefinition Height="56" />
             <RowDefinition Height="84" />
             <RowDefinition Height="*" />
             <RowDefinition Height="32" />
@@ -103,7 +103,7 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <Grid Margin="0,0,0,12">
+                    <Grid Margin="0,0,0,8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -189,40 +189,102 @@
                         <TabItem Header="Session">
                             <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,8,0,0">
                                 <StackPanel>
-                                    <Border Style="{StaticResource PanelCardStyle}">
+                                    <Border Style="{StaticResource CompactPanelCardStyle}" Padding="8" Margin="0,0,0,6">
                                         <StackPanel>
                                             <TextBlock Text="Session" Style="{StaticResource SectionTitleStyle}" />
                                             <UniformGrid Columns="2">
-                                                <Button Content="New" Command="{Binding NewSessionCommand}" AutomationProperties.AutomationId="NewSessionButton" />
-                                                <Button Content="Save Session" Command="{Binding SaveSessionCommand}" Style="{StaticResource PrimaryButtonStyle}" AutomationProperties.AutomationId="SaveSessionButton" />
-                                                <Button Content="Save As" Command="{Binding SaveSessionAsCommand}" AutomationProperties.AutomationId="SaveSessionAsButton" />
-                                                <Button Content="Open" Click="OpenSession_Click" AutomationProperties.AutomationId="OpenSessionButton" />
+                                                <Button Content="New" Command="{Binding NewSessionCommand}" Style="{StaticResource CompactCommandButtonStyle}" AutomationProperties.AutomationId="NewSessionButton" />
+                                                <Button Content="Save Session" Command="{Binding SaveSessionCommand}" Style="{StaticResource CompactPrimaryCommandButtonStyle}" AutomationProperties.AutomationId="SaveSessionButton" />
+                                                <Button Content="Save As" Command="{Binding SaveSessionAsCommand}" Style="{StaticResource CompactCommandButtonStyle}" AutomationProperties.AutomationId="SaveSessionAsButton" />
+                                                <Button Content="Open" Click="OpenSession_Click" Style="{StaticResource CompactCommandButtonStyle}" AutomationProperties.AutomationId="OpenSessionButton" />
                                             </UniformGrid>
-                                            <TextBlock Text="Recent sessions" Style="{StaticResource FieldLabelStyle}" />
-                                            <ComboBox ItemsSource="{Binding RecentSessions}" SelectedItem="{Binding SelectedRecentSession}" DisplayMemberPath="DisplayName" AutomationProperties.AutomationId="RecentSessionsSelector" />
-                                            <Button Content="Open recent" Command="{Binding OpenRecentSessionCommand}" AutomationProperties.AutomationId="OpenRecentSessionButton" />
+                                            <TextBlock Text="Recent sessions" Style="{StaticResource FieldLabelStyle}" Margin="0,3,0,2" />
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="106" />
+                                                </Grid.ColumnDefinitions>
+                                                <ComboBox ItemsSource="{Binding RecentSessions}" SelectedItem="{Binding SelectedRecentSession}" DisplayMemberPath="DisplayName" IsEnabled="{Binding HasRecentSessions}" AutomationProperties.AutomationId="RecentSessionsSelector" />
+                                                <Border Background="{StaticResource FieldBrush}"
+                                                        BorderBrush="{StaticResource PanelBorderBrush}"
+                                                        BorderThickness="1"
+                                                        CornerRadius="4"
+                                                        Padding="8,4"
+                                                        Height="32"
+                                                        IsHitTestVisible="False"
+                                                        Visibility="{Binding HasNoRecentSessions, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                    <TextBlock Text="No recent sessions" Foreground="{StaticResource MutedTextBrush}" FontSize="12" VerticalAlignment="Center" />
+                                                </Border>
+                                                <Border Background="{StaticResource FieldBrush}"
+                                                        BorderBrush="{StaticResource PanelBorderBrush}"
+                                                        BorderThickness="1"
+                                                        CornerRadius="4"
+                                                        Padding="8,4"
+                                                        Height="32"
+                                                        IsHitTestVisible="False"
+                                                        Visibility="{Binding IsRecentSessionSelectionEmpty, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                    <TextBlock Text="Select a recent session" Foreground="{StaticResource MutedTextBrush}" FontSize="12" VerticalAlignment="Center" />
+                                                </Border>
+                                                <Button Grid.Column="1" Content="Open recent" Command="{Binding OpenRecentSessionCommand}" IsEnabled="{Binding HasSelectedRecentSession}" Style="{StaticResource QuietButtonStyle}" Margin="6,0,0,0" AutomationProperties.AutomationId="OpenRecentSessionButton" />
+                                            </Grid>
                                         </StackPanel>
                                     </Border>
 
-                                    <Border Style="{StaticResource PanelCardStyle}">
-                                        <StackPanel>
+                                    <Border Style="{StaticResource CompactPanelCardStyle}">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
                                             <TextBlock Text="Metadata" Style="{StaticResource SectionTitleStyle}" />
-                                            <TextBlock Text="Project name" Style="{StaticResource FieldLabelStyle}" />
-                                            <TextBox Text="{Binding SessionName, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="SessionNameTextBox" />
-                                            <TextBlock Text="Customer" Style="{StaticResource FieldLabelStyle}" />
-                                            <TextBox Text="{Binding CustomerName, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="CustomerNameTextBox" />
-                                            <TextBlock Text="Device model" Style="{StaticResource FieldLabelStyle}" />
-                                            <TextBox Text="{Binding DeviceModel, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="DeviceModelTextBox" />
-                                            <TextBlock Text="Serial / asset tag" Style="{StaticResource FieldLabelStyle}" />
-                                            <TextBox Text="{Binding SerialAssetTag, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="SerialAssetTagTextBox" />
-                                            <TextBlock Text="Technician" Style="{StaticResource FieldLabelStyle}" />
-                                            <TextBox Text="{Binding TechnicianName, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="TechnicianNameTextBox" />
-                                            <TextBlock Text="Job / order number" Style="{StaticResource FieldLabelStyle}" />
-                                            <TextBox Text="{Binding JobOrderNumber, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="JobOrderNumberTextBox" />
-                                            <TextBlock Text="Notes" Style="{StaticResource FieldLabelStyle}" />
-                                            <TextBox Text="{Binding SessionNotes, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" Height="82" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" AutomationProperties.AutomationId="SessionNotesTextBox" />
-                                            <TextBlock Text="{Binding CurrentSessionFolderDisplay}" ToolTip="{Binding CurrentSessionFolderPath}" TextTrimming="CharacterEllipsis" Style="{StaticResource MutedTextStyle}" Margin="3,10,3,0" AutomationProperties.AutomationId="CurrentSessionFolderText" />
-                                        </StackPanel>
+                                            <StackPanel Grid.Row="1">
+                                                <TextBlock Text="Project name" Style="{StaticResource FieldLabelStyle}" Margin="0,2,0,2" />
+                                                <TextBox Text="{Binding SessionName, UpdateSourceTrigger=PropertyChanged}" Tag="Inspection project" AutomationProperties.AutomationId="SessionNameTextBox" />
+                                            </StackPanel>
+                                            <Grid Grid.Row="2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Margin="0,0,4,0">
+                                                    <TextBlock Text="Customer" Style="{StaticResource FieldLabelStyle}" Margin="0,3,0,2" />
+                                                    <TextBox Text="{Binding CustomerName, UpdateSourceTrigger=PropertyChanged}" Tag="Not specified" ToolTip="{Binding CustomerName}" AutomationProperties.AutomationId="CustomerNameTextBox" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" Margin="4,0,0,0">
+                                                    <TextBlock Text="Device model" Style="{StaticResource FieldLabelStyle}" Margin="0,3,0,2" />
+                                                    <TextBox Text="{Binding DeviceModel, UpdateSourceTrigger=PropertyChanged}" Tag="Not specified" ToolTip="{Binding DeviceModel}" AutomationProperties.AutomationId="DeviceModelTextBox" />
+                                                </StackPanel>
+                                            </Grid>
+                                            <Grid Grid.Row="3">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Margin="0,0,4,0">
+                                                    <TextBlock Text="Serial / asset tag" Style="{StaticResource FieldLabelStyle}" Margin="0,3,0,2" />
+                                                    <TextBox Text="{Binding SerialAssetTag, UpdateSourceTrigger=PropertyChanged}" Tag="Not specified" ToolTip="{Binding SerialAssetTag}" AutomationProperties.AutomationId="SerialAssetTagTextBox" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" Margin="4,0,0,0">
+                                                    <TextBlock Text="Technician" Style="{StaticResource FieldLabelStyle}" Margin="0,3,0,2" />
+                                                    <TextBox Text="{Binding TechnicianName, UpdateSourceTrigger=PropertyChanged}" Tag="Not specified" ToolTip="{Binding TechnicianName}" AutomationProperties.AutomationId="TechnicianNameTextBox" />
+                                                </StackPanel>
+                                            </Grid>
+                                            <StackPanel Grid.Row="4">
+                                                <TextBlock Text="Job / order number" Style="{StaticResource FieldLabelStyle}" Margin="0,3,0,2" />
+                                                <TextBox Text="{Binding JobOrderNumber, UpdateSourceTrigger=PropertyChanged}" Tag="Not specified" ToolTip="{Binding JobOrderNumber}" AutomationProperties.AutomationId="JobOrderNumberTextBox" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Row="5">
+                                                <TextBlock Text="Notes" Style="{StaticResource FieldLabelStyle}" Margin="0,3,0,2" />
+                                                <TextBox Text="{Binding SessionNotes, UpdateSourceTrigger=PropertyChanged}" Tag="Not specified" ToolTip="{Binding SessionNotes}" AutomationProperties.AutomationId="SessionNotesTextBox" />
+                                            </StackPanel>
+                                            <TextBlock Grid.Row="6" Text="{Binding CurrentSessionFolderDisplay}" ToolTip="{Binding CurrentSessionFolderPath}" TextTrimming="CharacterEllipsis" Style="{StaticResource MutedTextStyle}" Margin="0,4,0,0" AutomationProperties.AutomationId="CurrentSessionFolderText" />
+                                        </Grid>
                                     </Border>
                                 </StackPanel>
                             </ScrollViewer>

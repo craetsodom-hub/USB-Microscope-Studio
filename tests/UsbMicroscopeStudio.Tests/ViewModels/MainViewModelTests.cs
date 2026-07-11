@@ -10,6 +10,38 @@ namespace UsbMicroscopeStudio.Tests.ViewModels;
 public sealed class MainViewModelTests
 {
     [Fact]
+    public void MeasurementChip_UsesTheLatestCompletedMeasurement()
+    {
+        using var viewModel = CreateViewModel();
+        viewModel.Annotations.Add(new InspectionAnnotation
+        {
+            Tool = InspectionTool.Angle,
+            IsMeasurement = true,
+            Points = [new(0.4, 0.5), new(0.5, 0.5), new(0.5, 0.3222222222)]
+        });
+
+        Assert.Equal("Angle 90°", viewModel.MeasurementChipDisplay);
+
+        viewModel.Annotations.Add(new InspectionAnnotation
+        {
+            Tool = InspectionTool.Angle,
+            IsMeasurement = true,
+            Points = [new(0.2, 0.2), new(0.3, 0.3), new(0.3, 0.3)]
+        });
+
+        Assert.Equal("Angle 90°", viewModel.MeasurementChipDisplay);
+
+        viewModel.Annotations.Add(new InspectionAnnotation
+        {
+            Tool = InspectionTool.Angle,
+            IsMeasurement = true,
+            Points = [new(0.2, 0.2)]
+        });
+
+        Assert.Equal("Angle 90°", viewModel.MeasurementChipDisplay);
+    }
+
+    [Fact]
     public async Task RefreshCamerasAsync_SelectsHardwareCameraAndLoadsFormats()
     {
         var catalog = new FakeCameraCatalog(
@@ -481,6 +513,38 @@ public sealed class MainViewModelTests
         {
             Directory.Delete(tempDirectory, recursive: true);
         }
+    }
+
+    [Fact]
+    public void RecentSessionUiState_TracksEmptyAndSelectedEntries()
+    {
+        using var viewModel = CreateViewModel(recentSessionStore: new FakeRecentSessionStore([]));
+
+        Assert.True(viewModel.HasNoRecentSessions);
+        Assert.False(viewModel.HasRecentSessions);
+        Assert.False(viewModel.HasSelectedRecentSession);
+
+        var recent = new RecentSessionEntry
+        {
+            SessionName = "Bench intake",
+            SessionPath = "C:\\sessions\\sidecars\\session.json"
+        };
+        viewModel.RecentSessions.Add(recent);
+        viewModel.SelectedRecentSession = recent;
+
+        Assert.True(viewModel.HasRecentSessions);
+        Assert.False(viewModel.HasNoRecentSessions);
+        Assert.True(viewModel.HasSelectedRecentSession);
+
+        viewModel.SelectedRecentSession = null;
+
+        Assert.True(viewModel.IsRecentSessionSelectionEmpty);
+
+        viewModel.RecentSessions.Clear();
+
+        Assert.True(viewModel.HasNoRecentSessions);
+        Assert.False(viewModel.HasSelectedRecentSession);
+        Assert.False(viewModel.IsRecentSessionSelectionEmpty);
     }
 
     [Fact]

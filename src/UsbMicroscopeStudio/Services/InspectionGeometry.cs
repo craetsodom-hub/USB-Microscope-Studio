@@ -87,6 +87,13 @@ public static class InspectionGeometry
         return Math.Acos(cos) * 180d / Math.PI;
     }
 
+    public static bool HasValidThreePointAngle(InspectionPoint firstRayEndpoint, InspectionPoint vertex, InspectionPoint secondRayEndpoint, double width, double height)
+    {
+        const double minimumRayLengthPixels = 0.5;
+        return PixelDistance(firstRayEndpoint, vertex, width, height) > minimumRayLengthPixels &&
+               PixelDistance(secondRayEndpoint, vertex, width, height) > minimumRayLengthPixels;
+    }
+
     private static double Clamp01(double value) => Math.Clamp(value, 0d, 1d);
 
     private static int NormalizeRotation(int value) => ((value % 360) + 360) % 360;
