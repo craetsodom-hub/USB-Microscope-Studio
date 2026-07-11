@@ -6,6 +6,17 @@ namespace UsbMicroscopeStudio.Tests.Inspection;
 public sealed class InspectionGeometryTests
 {
     [Fact]
+    public void HasValidThreePointAngle_RejectsAZeroLengthRay()
+    {
+        Assert.False(InspectionGeometry.HasValidThreePointAngle(
+            new InspectionPoint(0.25, 0.5),
+            new InspectionPoint(0.5, 0.5),
+            new InspectionPoint(0.5, 0.5),
+            1280,
+            720));
+    }
+
+    [Fact]
     public void ThreePointAngleDegrees_UsesEndpointVertexEndpoint()
     {
         var angle = InspectionGeometry.ThreePointAngleDegrees(

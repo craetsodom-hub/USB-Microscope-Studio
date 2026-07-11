@@ -954,7 +954,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         var activeCalibration = ActiveCalibrationProfile();
         CalibrationChipDisplay = activeCalibration is null ? "Uncalibrated" : "Calibrated";
-        var measurement = Annotations.LastOrDefault(annotation => annotation.Tool is InspectionTool.Distance or InspectionTool.Angle && annotation.Points.Count >= 2);
+        var measurement = Annotations.LastOrDefault(annotation =>
+            (annotation.Tool == InspectionTool.Distance && annotation.Points.Count >= 2) ||
+            (annotation.Tool == InspectionTool.Angle && IsValidAngleAnnotation(annotation)));
         if (measurement is null)
         {
             MeasurementChipDisplay = "No measurement";
@@ -962,7 +964,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        if (measurement.Tool == InspectionTool.Angle && measurement.Points.Count >= 3)
+        if (measurement.Tool == InspectionTool.Angle)
         {
             var angle = InspectionGeometry.ThreePointAngleDegrees(measurement.Points[0], measurement.Points[1], measurement.Points[2], PreviewWidth, PreviewHeight);
             MeasurementChipDisplay = $"Angle {angle:0.#}°";
@@ -993,7 +995,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         Annotations = [.. Annotations],
         Measurements = Annotations
             .Where(annotation => annotation.IsMeasurement && annotation.Points.Count >= 2)
-            .Select(annotation => annotation.Tool == InspectionTool.Angle && annotation.Points.Count >= 3
+            .Where(annotation => annotation.Tool != InspectionTool.Angle || IsValidAngleAnnotation(annotation))
+            .Select(annotation => annotation.Tool == InspectionTool.Angle
                 ? new MeasurementResult(
                     InspectionGeometry.PixelDistance(annotation.Points[0], annotation.Points[^1], PreviewWidth, PreviewHeight),
                     null,
@@ -1003,6 +1006,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 : _calibrationCalculator.MeasureDistance(annotation.Points[0], annotation.Points[^1], PreviewWidth, PreviewHeight, ActiveCalibrationProfile()))
             .ToList()
     };
+
+    private bool IsValidAngleAnnotation(InspectionAnnotation annotation) =>
+        annotation.Points.Count >= 3 &&
+        InspectionGeometry.HasValidThreePointAngle(
+            annotation.Points[0],
+            annotation.Points[1],
+            annotation.Points[2],
+            PreviewWidth,
+            PreviewHeight);
 
     private InspectionSessionDocument CreateSessionDocument(string workspaceFolder)
     {

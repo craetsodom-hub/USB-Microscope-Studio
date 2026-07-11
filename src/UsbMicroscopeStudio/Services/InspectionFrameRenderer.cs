@@ -161,6 +161,16 @@ public sealed class InspectionFrameRenderer
         var first = points[0];
         var vertex = points[1];
         var second = points[2];
+        if (!InspectionGeometry.HasValidThreePointAngle(
+                InspectionGeometry.FromViewport(first, bounds.Width, bounds.Height),
+                InspectionGeometry.FromViewport(vertex, bounds.Width, bounds.Height),
+                InspectionGeometry.FromViewport(second, bounds.Width, bounds.Height),
+                bounds.Width,
+                bounds.Height))
+        {
+            return;
+        }
+
         drawingContext.DrawLine(pen, vertex, first);
         drawingContext.DrawLine(pen, vertex, second);
 

@@ -129,7 +129,14 @@ public sealed class InspectionOverlayControlTests
 
             overlay.CurrentTool = InspectionTool.Angle;
             overlay.HandlePreviewPointForTesting(new Point(384, 396));
+            Assert.Single(annotations);
+
             overlay.HandlePreviewPointForTesting(new Point(640, 324));
+            Assert.Single(annotations);
+
+            overlay.HandlePreviewPointForTesting(new Point(640, 324));
+            Assert.Single(annotations);
+
             overlay.HandlePreviewPointForTesting(new Point(896, 432));
 
             var angle = annotations.Single(annotation => annotation.Tool == InspectionTool.Angle);

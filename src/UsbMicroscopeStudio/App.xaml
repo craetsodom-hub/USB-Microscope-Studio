@@ -129,6 +129,7 @@
                                 <Setter TargetName="Root" Property="Background" Value="#141C25" />
                                 <Setter TargetName="Root" Property="BorderBrush" Value="#26313D" />
                                 <Setter Property="Foreground" Value="#687786" />
+                                <Setter Property="Opacity" Value="0.62" />
                                 <Setter Property="Cursor" Value="Arrow" />
                             </Trigger>
                         </ControlTemplate.Triggers>

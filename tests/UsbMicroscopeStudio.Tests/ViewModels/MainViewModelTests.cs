@@ -10,6 +10,38 @@ namespace UsbMicroscopeStudio.Tests.ViewModels;
 public sealed class MainViewModelTests
 {
     [Fact]
+    public void MeasurementChip_UsesTheLatestCompletedMeasurement()
+    {
+        using var viewModel = CreateViewModel();
+        viewModel.Annotations.Add(new InspectionAnnotation
+        {
+            Tool = InspectionTool.Angle,
+            IsMeasurement = true,
+            Points = [new(0.4, 0.5), new(0.5, 0.5), new(0.5, 0.3222222222)]
+        });
+
+        Assert.Equal("Angle 90°", viewModel.MeasurementChipDisplay);
+
+        viewModel.Annotations.Add(new InspectionAnnotation
+        {
+            Tool = InspectionTool.Angle,
+            IsMeasurement = true,
+            Points = [new(0.2, 0.2), new(0.3, 0.3), new(0.3, 0.3)]
+        });
+
+        Assert.Equal("Angle 90°", viewModel.MeasurementChipDisplay);
+
+        viewModel.Annotations.Add(new InspectionAnnotation
+        {
+            Tool = InspectionTool.Angle,
+            IsMeasurement = true,
+            Points = [new(0.2, 0.2)]
+        });
+
+        Assert.Equal("Angle 90°", viewModel.MeasurementChipDisplay);
+    }
+
+    [Fact]
     public async Task RefreshCamerasAsync_SelectsHardwareCameraAndLoadsFormats()
     {
         var catalog = new FakeCameraCatalog(
