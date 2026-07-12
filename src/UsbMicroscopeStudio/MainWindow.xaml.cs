@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using Microsoft.Win32;
 using UsbMicroscopeStudio.Models.Inspection;
@@ -14,6 +15,7 @@ public partial class MainWindow : Window
 {
     private readonly MainViewModel _viewModel;
     private readonly WindowFullscreenStateController _fullscreenStateController;
+    private readonly DarkTitleBarController _titleBarController = new(new DwmWindowTitleBarInterop());
     private readonly InspectionFrameRenderer _inspectionFrameRenderer = new();
 
     public MainWindow()
@@ -30,8 +32,14 @@ public partial class MainWindow : Window
         DataContext = _viewModel;
         _fullscreenStateController = new WindowFullscreenStateController(new WpfWindowStateAdapter(this));
         _viewModel.PropertyChanged += ViewModelOnPropertyChanged;
+        SourceInitialized += MainWindow_SourceInitialized;
         Loaded += MainWindow_Loaded;
         Closing += MainWindow_Closing;
+    }
+
+    private void MainWindow_SourceInitialized(object? sender, EventArgs e)
+    {
+        _titleBarController.Apply(new WindowInteropHelper(this).Handle);
     }
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)

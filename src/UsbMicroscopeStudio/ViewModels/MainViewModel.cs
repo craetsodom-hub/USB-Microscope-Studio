@@ -834,10 +834,25 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     public void OpenSession(string sessionPath)
     {
-        var session = _sessionStore.Load(sessionPath);
-        ApplySession(session);
-        AddRecentSession(session.SessionName, sessionPath);
-        StatusMessage = $"Session opened: {sessionPath}";
+        if (string.IsNullOrWhiteSpace(sessionPath) || !File.Exists(sessionPath))
+        {
+            RemoveRecentSession(sessionPath);
+            StatusMessage = "Session file is no longer available.";
+            return;
+        }
+
+        try
+        {
+            var session = _sessionStore.Load(sessionPath);
+            ApplySession(session);
+            AddRecentSession(session.SessionName, sessionPath);
+            StatusMessage = $"Session opened: {sessionPath}";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+        {
+            RemoveRecentSession(sessionPath);
+            StatusMessage = "Session could not be opened.";
+        }
     }
 
     public void Dispose()
@@ -1167,6 +1182,18 @@ public partial class MainViewModel : ObservableObject, IDisposable
             RecentSessions.RemoveAt(RecentSessions.Count - 1);
         }
 
+        _recentSessionStore.Save(RecentSessions);
+    }
+
+    private void RemoveRecentSession(string? sessionPath)
+    {
+        var existing = RecentSessions.FirstOrDefault(session => string.Equals(session.SessionPath, sessionPath, StringComparison.OrdinalIgnoreCase));
+        if (existing is null)
+        {
+            return;
+        }
+
+        RecentSessions.Remove(existing);
         _recentSessionStore.Save(RecentSessions);
     }
 

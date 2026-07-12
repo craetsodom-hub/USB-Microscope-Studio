@@ -650,6 +650,30 @@ public sealed class MainViewModelTests
         Assert.Equal(4.0, viewModel.ZoomLevel);
     }
 
+    [Fact]
+    public void OpenRecentSession_MissingSessionFile_RemovesStaleEntryWithoutCrashing()
+    {
+        var missingPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "sidecars", "session.json");
+        var recentStore = new FakeRecentSessionStore(
+        [
+            new RecentSessionEntry
+            {
+                SessionName = "Missing session",
+                SessionPath = missingPath,
+                LastOpenedAt = DateTimeOffset.Now
+            }
+        ]);
+        using var viewModel = CreateViewModel(recentSessionStore: recentStore);
+        viewModel.SelectedRecentSession = viewModel.RecentSessions.Single();
+
+        viewModel.OpenRecentSession();
+
+        Assert.Empty(viewModel.RecentSessions);
+        Assert.Equal("Session file is no longer available.", viewModel.StatusMessage);
+        Assert.NotNull(recentStore.SavedSessions);
+        Assert.Empty(recentStore.SavedSessions!);
+    }
+
     private static MainViewModel CreateViewModel(
         FakeCameraCatalog? catalog = null,
         FakePreviewService? previewService = null,

@@ -85,10 +85,18 @@ Covered by unit tests:
 36. Confirm the title bar uses the USB Microscope Studio product icon rather than the default .NET icon.
 37. Run `scripts/publish-win-x64.ps1`, confirm `artifacts/release/win-x64/UsbMicroscopeStudio.exe` exists, and verify its Windows Explorer icon and version metadata.
 38. Launch the published executable, use Demo Mode, and confirm preview, text and angle annotations, session saving, and HTML report export still work.
+39. Confirm the native title bar is graphite/dark, shows the USB Microscope Studio icon and title, and contains no default white caption area or default .NET icon.
+40. Confirm the native title bar keeps drag, double-click maximize/restore, minimize, maximize/restore, close, Alt+F4, resize edges/corners, and available Windows snap behavior working.
+41. Verify Escape exits fullscreen only, then confirm normal window chrome and the prior size/position/state return without layout corruption.
+42. Run a completed customer-style session from both source and published output: create/edit/open/reopen a session, draw text and angle annotations, use undo/redo/clear, save all inspection artifacts, export/open multiple reports, and repeatedly switch tabs.
+43. Leave Demo Mode running for at least ten minutes and confirm it remains responsive without a crash, obvious memory growth, or UI freeze.
+44. Launch normally when a hardware preview runtime cannot initialize and confirm the app transitions to `Hardware preview unavailable. Demo Mode started.` with a live synthetic preview instead of a raw runtime error or blank workspace.
 
 ## Release Checklist
 
 - [ ] The USB Microscope Studio icon is visible in the title bar.
+- [ ] The native Windows title bar is dark/graphite with the USB Microscope Studio title and professional system controls.
+- [ ] No default purple .NET icon or white title bar is visible in source or published output.
 - [ ] The published executable displays the USB Microscope Studio icon in Windows Explorer.
 - [ ] Product version `1.0.0` is defined in the project metadata.
 - [ ] `scripts/publish-win-x64.ps1` completes and writes the x64 release to `artifacts/release/win-x64`.

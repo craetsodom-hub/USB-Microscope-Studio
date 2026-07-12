@@ -15,6 +15,7 @@ The interface is built for technicians who repeatedly inspect live video, not fo
 - Inspection controls: Freeze & Inspect, crosshair, grid spacing, rulers, annotation tool, color, stroke thickness, undo/redo/clear, calibration profile management, and inspection saves.
 - Main workspace: dominant high-contrast microscope preview with a framed preview header and inspection state badges.
 - Bottom status bar: professional status strip with concise operator messages. Long filesystem paths are trimmed in the visible UI and reserved for tooltips or dedicated path panels.
+- Window chrome: retain native Windows resizing, snapping, dragging, system menu, and caption buttons. The app applies the DWM immersive-dark attribute and graphite caption colors after the WPF window handle is created; it does not replace the title bar with a fragile custom control.
 
 ## Visual System
 
@@ -26,6 +27,7 @@ The interface is built for technicians who repeatedly inspect live video, not fo
 - Calibration controls: empty profile lists show `No saved profiles`; actions that require a selected profile are disabled until usable.
 - Panels: 6px corner radius maximum, subtle borders, no glassmorphism, no decorative gradients, no oversized hero treatment.
 - App icon: the product mark is a graphite inspection optic with refined alignment brackets and a restrained cyan center reticle. Its multi-size `.ico`, editable SVG, and high-resolution PNG live under `src/UsbMicroscopeStudio/Assets`; it is used by the title bar and executable.
+- Title bar: native minimize, maximize/restore, and close controls remain available and use the Windows dark-caption treatment. Escape is reserved for leaving fullscreen; it never closes the application.
 
 ## Interaction Notes
 

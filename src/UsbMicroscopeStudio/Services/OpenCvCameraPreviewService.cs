@@ -147,7 +147,13 @@ public sealed class OpenCvCameraPreviewService : ICameraPreviewService
         }
         catch (Exception ex) when (ex is DllNotFoundException or TypeInitializationException or BadImageFormatException)
         {
-            RaiseStatus("Camera runtime unavailable. Use Demo Mode or install the required OpenCV native runtime.");
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            RaiseStatus("Hardware preview unavailable. Demo Mode started.");
+            await RunDemoLoop(format, cancellationToken).ConfigureAwait(false);
         }
     }
 
