@@ -167,18 +167,20 @@ public sealed class OpenCvCameraPreviewService : ICameraPreviewService
                 return;
             }
 
-            RaiseStatus("Hardware preview unavailable. Demo Mode started.");
-            await RunDemoLoop(format, cancellationToken).ConfigureAwait(false);
+            var fallbackStatus = MediaFoundationPrerequisite.IsAvailable()
+                ? "Hardware preview unavailable. Demo Mode started."
+                : "Camera preview requires the Windows Media Feature Pack. Demo Mode started.";
+            await RunDemoLoop(format, cancellationToken, fallbackStatus).ConfigureAwait(false);
         }
     }
 
-    private async Task RunDemoLoop(CameraFormat format, CancellationToken cancellationToken)
+    private async Task RunDemoLoop(CameraFormat format, CancellationToken cancellationToken, string? startupStatus = null)
     {
         using var frameClock = new FrameRateCounter();
         var frameIndex = 0;
         var delay = Math.Max(1, (int)Math.Round(1000d / Math.Max(1, format.FramesPerSecond)));
 
-        RaiseStatus($"Demo Mode: synthetic feed at {format.DisplayName}");
+        RaiseStatus(startupStatus ?? $"Demo Mode: synthetic feed at {format.DisplayName}");
 
         while (!cancellationToken.IsCancellationRequested)
         {

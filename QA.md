@@ -93,6 +93,7 @@ Covered by unit tests:
 43. Leave Demo Mode running for at least ten minutes and confirm it remains responsive without a crash, obvious memory growth, or UI freeze.
 44. Launch normally when a hardware preview runtime cannot initialize and confirm the app transitions to `Hardware preview unavailable. Demo Mode started.` with a live synthetic preview instead of a raw runtime error or blank workspace.
 45. While switching cameras, disconnecting a camera, or closing the preview, confirm the application remains responsive even when the UVC driver takes time to release its native read.
+46. On Windows N editions without the Media Feature Pack, confirm the app reports `Camera preview requires the Windows Media Feature Pack. Demo Mode started.` and remains usable in Demo Mode.
 
 ## Release Checklist
 
@@ -103,6 +104,7 @@ Covered by unit tests:
 - [ ] Product version `1.0.0` is defined in the project metadata.
 - [ ] `scripts/publish-win-x64.ps1` completes and writes the x64 release to `artifacts/release/win-x64`.
 - [ ] Demo Mode smoke test passes on the release output.
+- [ ] On Windows N editions, install the Windows Media Feature Pack before validating physical camera capture.
 - [ ] Current screenshots are reviewed before release.
 
 To force Demo Mode on machines that have a webcam attached:
