@@ -28,9 +28,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly IRecentSessionStore _recentSessionStore;
     private readonly HtmlInspectionReportService _htmlReportService;
     private readonly SemaphoreSlim _previewGate = new(1, 1);
+    private readonly object _frameDispatchLock = new();
     private int _formatLoadRequestId;
     private int _previewStartRequestId;
+    private FrameReadyEventArgs? _pendingFrame;
     private bool _suppressFormatLoad;
+    private bool _frameDispatchQueued;
+    private bool _isDisposed;
     private int _annotationRotationDegrees;
     private bool _annotationMirrored;
 
@@ -857,6 +861,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
+        lock (_frameDispatchLock)
+        {
+            _isDisposed = true;
+            _pendingFrame = null;
+        }
+
         _previewService.FrameReady -= OnFrameReady;
         _previewService.StatusChanged -= OnStatusChanged;
         Annotations.CollectionChanged -= AnnotationsOnCollectionChanged;
@@ -892,17 +902,60 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     private void OnFrameReady(object? sender, FrameReadyEventArgs e)
     {
-        _uiDispatcher.Invoke(() =>
+        var queueDrain = false;
+        lock (_frameDispatchLock)
         {
-            CurrentFps = e.FramesPerSecond;
-            if (!IsFrozen)
+            if (_isDisposed)
             {
-                SyncAnnotationsToDisplayedFrameTransform();
-                PreviewFrame = e.Frame;
-                PreviewWidth = e.Frame.PixelWidth;
-                PreviewHeight = e.Frame.PixelHeight;
+                return;
             }
-        });
+
+            // Retain only the newest image while the UI is rendering. This bounds the
+            // dispatcher work queue and avoids a visible lag spiral under load.
+            _pendingFrame = e;
+            if (!_frameDispatchQueued)
+            {
+                _frameDispatchQueued = true;
+                queueDrain = true;
+            }
+        }
+
+        if (queueDrain)
+        {
+            _uiDispatcher.BeginInvoke(DrainLatestFrame);
+        }
+    }
+
+    private void DrainLatestFrame()
+    {
+        FrameReadyEventArgs? frame;
+        lock (_frameDispatchLock)
+        {
+            if (_isDisposed)
+            {
+                _pendingFrame = null;
+                _frameDispatchQueued = false;
+                return;
+            }
+
+            frame = _pendingFrame;
+            _pendingFrame = null;
+            _frameDispatchQueued = false;
+        }
+
+        if (frame is null)
+        {
+            return;
+        }
+
+        CurrentFps = frame.FramesPerSecond;
+        if (!IsFrozen)
+        {
+            SyncAnnotationsToDisplayedFrameTransform();
+            PreviewFrame = frame.Frame;
+            PreviewWidth = frame.Frame.PixelWidth;
+            PreviewHeight = frame.Frame.PixelHeight;
+        }
     }
 
     private void AnnotationsOnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -920,7 +973,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     private void OnStatusChanged(object? sender, string status)
     {
-        _uiDispatcher.Invoke(() => StatusMessage = status);
+        _uiDispatcher.BeginInvoke(() =>
+        {
+            if (!_isDisposed)
+            {
+                StatusMessage = status;
+            }
+        });
     }
 
     private bool CanStartPreview() => !IsPreviewing && SelectedCamera is not null && SelectedFormat is not null;

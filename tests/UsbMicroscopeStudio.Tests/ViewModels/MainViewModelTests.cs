@@ -126,6 +126,27 @@ public sealed class MainViewModelTests
     }
 
     [Fact]
+    public void FrameDelivery_CoalescesPendingFramesAndKeepsTheLatestFrame()
+    {
+        var preview = new FakePreviewService();
+        var dispatcher = new QueuedDispatcher();
+        using var viewModel = CreateViewModel(previewService: preview, uiDispatcher: dispatcher);
+        var firstFrame = CreateFrame(640, 480);
+        var latestFrame = CreateFrame(1280, 720);
+
+        preview.PublishFrame(firstFrame);
+        preview.PublishFrame(latestFrame);
+
+        Assert.Equal(1, dispatcher.PendingCount);
+
+        dispatcher.RunNext();
+
+        Assert.Same(latestFrame, viewModel.PreviewFrame);
+        Assert.Equal(1280, viewModel.PreviewWidth);
+        Assert.Equal(720, viewModel.PreviewHeight);
+    }
+
+    [Fact]
     public void RotateAndMirrorUpdatePreviewTransforms()
     {
         var preview = new FakePreviewService();
@@ -682,7 +703,8 @@ public sealed class MainViewModelTests
         FakeFolderPicker? folderPicker = null,
         FakeCalibrationProfileStore? calibrationProfileStore = null,
         InspectionSessionStore? sessionStore = null,
-        FakeRecentSessionStore? recentSessionStore = null)
+        FakeRecentSessionStore? recentSessionStore = null,
+        IUiDispatcher? uiDispatcher = null)
     {
         return new MainViewModel(
             catalog ?? new FakeCameraCatalog([new CameraDevice("demo://microscope", "Demo", -1, true)], [new CameraFormat(640, 480, 30)]),
@@ -690,7 +712,7 @@ public sealed class MainViewModelTests
             snapshotService ?? new FakeSnapshotService(),
             settingsStore ?? new FakeSettingsStore(new AppSettings(null)),
             folderPicker ?? new FakeFolderPicker(null),
-            new ImmediateDispatcher(),
+            uiDispatcher ?? new ImmediateDispatcher(),
             calibrationProfileStore,
             null,
             sessionStore,
@@ -834,6 +856,21 @@ public sealed class MainViewModelTests
     private sealed class ImmediateDispatcher : IUiDispatcher
     {
         public void Invoke(Action action) => action();
+
+        public void BeginInvoke(Action action) => action();
+    }
+
+    private sealed class QueuedDispatcher : IUiDispatcher
+    {
+        private readonly Queue<Action> _pendingActions = new();
+
+        public int PendingCount => _pendingActions.Count;
+
+        public void Invoke(Action action) => action();
+
+        public void BeginInvoke(Action action) => _pendingActions.Enqueue(action);
+
+        public void RunNext() => _pendingActions.Dequeue().Invoke();
     }
 
     private sealed class FakeCalibrationProfileStore(IReadOnlyList<CalibrationProfile> profiles) : ICalibrationProfileStore

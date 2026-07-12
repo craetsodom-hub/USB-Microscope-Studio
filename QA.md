@@ -22,6 +22,7 @@ Covered by unit tests:
 - Rapid camera switching ignores stale format results.
 - Failed preview startup does not enter the previewing state.
 - Preview start passes selected camera and format to the preview service.
+- Rapid frame delivery is coalesced to the newest pending frame so a busy UI cannot build an unbounded preview queue.
 - Freeze preserves the last displayed frame.
 - Rotate and mirror update preview transforms.
 - Snapshot saves the current frame.
@@ -91,6 +92,7 @@ Covered by unit tests:
 42. Run a completed customer-style session from both source and published output: create/edit/open/reopen a session, draw text and angle annotations, use undo/redo/clear, save all inspection artifacts, export/open multiple reports, and repeatedly switch tabs.
 43. Leave Demo Mode running for at least ten minutes and confirm it remains responsive without a crash, obvious memory growth, or UI freeze.
 44. Launch normally when a hardware preview runtime cannot initialize and confirm the app transitions to `Hardware preview unavailable. Demo Mode started.` with a live synthetic preview instead of a raw runtime error or blank workspace.
+45. While switching cameras, disconnecting a camera, or closing the preview, confirm the application remains responsive even when the UVC driver takes time to release its native read.
 
 ## Release Checklist
 

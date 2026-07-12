@@ -11,6 +11,7 @@ namespace UsbMicroscopeStudio.Services;
 
 public sealed class OpenCvCameraPreviewService : ICameraPreviewService
 {
+    private static readonly TimeSpan StopTimeout = TimeSpan.FromSeconds(2);
     private CancellationTokenSource? _previewCancellation;
     private Task? _previewTask;
     private readonly object _syncRoot = new();
@@ -66,12 +67,24 @@ public sealed class OpenCvCameraPreviewService : ICameraPreviewService
             return;
         }
 
+        var stopTimedOut = false;
         try
         {
             cancellation.Cancel();
             if (task is not null)
             {
-                await task.ConfigureAwait(false);
+                var completed = await Task.WhenAny(task, Task.Delay(StopTimeout)).ConfigureAwait(false);
+                if (completed == task)
+                {
+                    await task.ConfigureAwait(false);
+                }
+                else
+                {
+                    // A camera driver can block a native read during unplug or shutdown.
+                    // The cancelled worker will clean itself up if it resumes, but callers
+                    // must be free to keep using the application immediately.
+                    stopTimedOut = true;
+                }
             }
         }
         catch (OperationCanceledException)
@@ -80,7 +93,9 @@ public sealed class OpenCvCameraPreviewService : ICameraPreviewService
         finally
         {
             cancellation.Dispose();
-            RaiseStatus("Preview stopped");
+            RaiseStatus(stopTimedOut
+                ? "Preview stopped. Camera cleanup is continuing in the background."
+                : "Preview stopped");
         }
     }
 
