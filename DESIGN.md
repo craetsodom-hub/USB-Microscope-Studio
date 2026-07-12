@@ -25,7 +25,7 @@ The interface is built for technicians who repeatedly inspect live video, not fo
 - Buttons: consistent dark templates with clear hover/pressed/disabled states. Header actions use a compact command style; rail actions retain larger touch targets.
 - Calibration controls: empty profile lists show `No saved profiles`; actions that require a selected profile are disabled until usable.
 - Panels: 6px corner radius maximum, subtle borders, no glassmorphism, no decorative gradients, no oversized hero treatment.
-- App icon: a production multi-size `.ico` brand mark remains a release-polish requirement. This PR avoids adding a placeholder icon without an approved product mark.
+- App icon: the product mark is a graphite inspection optic with refined alignment brackets and a restrained cyan center reticle. Its multi-size `.ico`, editable SVG, and high-resolution PNG live under `src/UsbMicroscopeStudio/Assets`; it is used by the title bar and executable.
 
 ## Interaction Notes
 

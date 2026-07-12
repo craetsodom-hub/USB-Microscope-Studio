@@ -43,6 +43,7 @@ Covered by unit tests:
 - Open-inspection restore of clean frame, annotations, and matching calibration.
 - Direct Save JSON sidecars preserve the clean-frame path and can reopen the saved clean frame.
 - Native-dimension annotated PNG rendering that excludes viewport letterboxing and UI zoom.
+- Product icon source assets, executable icon configuration, product metadata, and the Windows x64 publish script.
 
 ## Manual Test Plan
 
@@ -81,10 +82,18 @@ Covered by unit tests:
 33. Confirm the preview header uses separate concise chips for zoom, rotation, measurement, and calibration state.
 34. Confirm an empty calibration profile list shows `No saved profiles` and disables unusable profile actions.
 35. Confirm the updated full-window screenshots under `docs/screenshots` cover Camera, Inspect with text and angle visible, Calibration, and Export after report generation.
+36. Confirm the title bar uses the USB Microscope Studio product icon rather than the default .NET icon.
+37. Run `scripts/publish-win-x64.ps1`, confirm `artifacts/release/win-x64/UsbMicroscopeStudio.exe` exists, and verify its Windows Explorer icon and version metadata.
+38. Launch the published executable, use Demo Mode, and confirm preview, text and angle annotations, session saving, and HTML report export still work.
 
-Release-polish task not covered by this PR:
+## Release Checklist
 
-- Add an approved multi-size `.ico` product icon before release packaging. Do not ship a temporary placeholder icon.
+- [ ] The USB Microscope Studio icon is visible in the title bar.
+- [ ] The published executable displays the USB Microscope Studio icon in Windows Explorer.
+- [ ] Product version `1.0.0` is defined in the project metadata.
+- [ ] `scripts/publish-win-x64.ps1` completes and writes the x64 release to `artifacts/release/win-x64`.
+- [ ] Demo Mode smoke test passes on the release output.
+- [ ] Current screenshots are reviewed before release.
 
 To force Demo Mode on machines that have a webcam attached:
 

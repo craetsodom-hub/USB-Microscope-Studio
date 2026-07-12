@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="USB Microscope Studio">
+  <rect width="256" height="256" fill="#0B141A"/>
+  <path d="M45 72V45H72M184 45H211V72M45 184V211H72M184 211H211V184" fill="none" stroke="#91AAB5" stroke-width="2.4"/>
+  <circle cx="128" cy="128" r="68" fill="#10212B" stroke="#93ACB7" stroke-width="3"/>
+  <circle cx="128" cy="128" r="47" fill="none" stroke="#3C6172" stroke-width="2"/>
+  <circle cx="128" cy="128" r="22" fill="#0A1319" stroke="#9DB6C0" stroke-width="2"/>
+  <path d="M106 128H119M137 128H150M128 106V119M128 137V150" fill="none" stroke="#70B0C2" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="128" cy="128" r="2.6" fill="#70B0C2"/>
+</svg>
