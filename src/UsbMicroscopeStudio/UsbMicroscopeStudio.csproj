@@ -9,9 +9,24 @@
     <Platforms>x64</Platforms>
     <PlatformTarget>x64</PlatformTarget>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
+    <Product>USB Microscope Studio</Product>
+    <Company>USB Microscope Studio</Company>
+    <Description>Professional microscope inspection workspace</Description>
+    <AssemblyTitle>USB Microscope Studio</AssemblyTitle>
+    <AssemblyDescription>Professional microscope inspection workspace</AssemblyDescription>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyInformationalVersion>1.0.0</AssemblyInformationalVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="Assets\AppIcon.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="DirectShowLib.Standard" Version="2.1.0" />
     <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.13.0.20260627" />

@@ -22,6 +22,7 @@ Covered by unit tests:
 - Rapid camera switching ignores stale format results.
 - Failed preview startup does not enter the previewing state.
 - Preview start passes selected camera and format to the preview service.
+- Rapid frame delivery is coalesced to the newest pending frame so a busy UI cannot build an unbounded preview queue.
 - Freeze preserves the last displayed frame.
 - Rotate and mirror update preview transforms.
 - Snapshot saves the current frame.
@@ -43,6 +44,7 @@ Covered by unit tests:
 - Open-inspection restore of clean frame, annotations, and matching calibration.
 - Direct Save JSON sidecars preserve the clean-frame path and can reopen the saved clean frame.
 - Native-dimension annotated PNG rendering that excludes viewport letterboxing and UI zoom.
+- Product icon source assets, executable icon configuration, product metadata, and the Windows x64 publish script.
 
 ## Manual Test Plan
 
@@ -81,10 +83,29 @@ Covered by unit tests:
 33. Confirm the preview header uses separate concise chips for zoom, rotation, measurement, and calibration state.
 34. Confirm an empty calibration profile list shows `No saved profiles` and disables unusable profile actions.
 35. Confirm the updated full-window screenshots under `docs/screenshots` cover Camera, Inspect with text and angle visible, Calibration, and Export after report generation.
+36. Confirm the title bar uses the USB Microscope Studio product icon rather than the default .NET icon.
+37. Run `scripts/publish-win-x64.ps1`, confirm `artifacts/release/win-x64/UsbMicroscopeStudio.exe` exists, and verify its Windows Explorer icon and version metadata.
+38. Launch the published executable, use Demo Mode, and confirm preview, text and angle annotations, session saving, and HTML report export still work.
+39. Confirm the native title bar is graphite/dark, shows the USB Microscope Studio icon and title, and contains no default white caption area or default .NET icon.
+40. Confirm the native title bar keeps drag, double-click maximize/restore, minimize, maximize/restore, close, Alt+F4, resize edges/corners, and available Windows snap behavior working.
+41. Verify Escape exits fullscreen only, then confirm normal window chrome and the prior size/position/state return without layout corruption.
+42. Run a completed customer-style session from both source and published output: create/edit/open/reopen a session, draw text and angle annotations, use undo/redo/clear, save all inspection artifacts, export/open multiple reports, and repeatedly switch tabs.
+43. Leave Demo Mode running for at least ten minutes and confirm it remains responsive without a crash, obvious memory growth, or UI freeze.
+44. Launch normally when a hardware preview runtime cannot initialize and confirm the app transitions to `Hardware preview unavailable. Demo Mode started.` with a live synthetic preview instead of a raw runtime error or blank workspace.
+45. While switching cameras, disconnecting a camera, or closing the preview, confirm the application remains responsive even when the UVC driver takes time to release its native read.
+46. On Windows N editions without the Media Feature Pack, confirm the app reports `Camera preview requires the Windows Media Feature Pack. Demo Mode started.` and remains usable in Demo Mode.
 
-Release-polish task not covered by this PR:
+## Release Checklist
 
-- Add an approved multi-size `.ico` product icon before release packaging. Do not ship a temporary placeholder icon.
+- [ ] The USB Microscope Studio icon is visible in the title bar.
+- [ ] The native Windows title bar is dark/graphite with the USB Microscope Studio title and professional system controls.
+- [ ] No default purple .NET icon or white title bar is visible in source or published output.
+- [ ] The published executable displays the USB Microscope Studio icon in Windows Explorer.
+- [ ] Product version `1.0.0` is defined in the project metadata.
+- [ ] `scripts/publish-win-x64.ps1` completes and writes the x64 release to `artifacts/release/win-x64`.
+- [ ] Demo Mode smoke test passes on the release output.
+- [ ] On Windows N editions, install the Windows Media Feature Pack before validating physical camera capture.
+- [ ] Current screenshots are reviewed before release.
 
 To force Demo Mode on machines that have a webcam attached:
 

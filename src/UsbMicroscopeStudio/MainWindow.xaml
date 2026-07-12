@@ -6,6 +6,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="USB Microscope Studio"
+        Icon="pack://siteoforigin:,,,/Assets/AppIcon.ico"
         Width="960"
         Height="720"
         MinWidth="900"
