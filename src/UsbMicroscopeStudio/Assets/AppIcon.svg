@@ -1,13 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="USB Microscope Studio">
-  <rect x="14" y="14" width="228" height="228" rx="42" fill="#101A24" stroke="#627A8C" stroke-width="8"/>
-  <path d="M54 67 82 50 110 78 93 95Z" fill="#263C4D" stroke="#86A6B9" stroke-width="7" stroke-linejoin="round"/>
-  <path d="M48 55 65 45 74 54 57 64Z" fill="#6EB8D6"/>
-  <path d="M60 42 70 36 82 48 72 54Z" fill="#D3E1E8"/>
-  <circle cx="137" cy="133" r="76" fill="#172A38" stroke="#91B4C8" stroke-width="8"/>
-  <circle cx="137" cy="133" r="54" fill="#0B141D" stroke="#436B80" stroke-width="6"/>
-  <path d="M84 133H190M137 80V186" stroke="#67BDD9" stroke-width="5" stroke-linecap="round"/>
-  <circle cx="137" cy="133" r="18" fill="none" stroke="#C9E6F0" stroke-width="5"/>
-  <circle cx="137" cy="133" r="5" fill="#67BDD9"/>
-  <path d="M137 64V73M137 193V202M68 133H77M197 133H206" stroke="#D5E3E9" stroke-width="5" stroke-linecap="round"/>
-  <path d="M95 90 101 96M179 170 185 176M95 176 101 170M179 96 185 90" stroke="#5C91A8" stroke-width="4" stroke-linecap="round"/>
+  <rect width="256" height="256" fill="#0B141A"/>
+  <path d="M45 72V45H72M184 45H211V72M45 184V211H72M184 211H211V184" fill="none" stroke="#91AAB5" stroke-width="2.4"/>
+  <circle cx="128" cy="128" r="68" fill="#10212B" stroke="#93ACB7" stroke-width="3"/>
+  <circle cx="128" cy="128" r="47" fill="none" stroke="#3C6172" stroke-width="2"/>
+  <circle cx="128" cy="128" r="22" fill="#0A1319" stroke="#9DB6C0" stroke-width="2"/>
+  <path d="M106 128H119M137 128H150M128 106V119M128 137V150" fill="none" stroke="#70B0C2" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="128" cy="128" r="2.6" fill="#70B0C2"/>
 </svg>

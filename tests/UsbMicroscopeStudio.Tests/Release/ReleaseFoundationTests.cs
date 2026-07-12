@@ -16,6 +16,22 @@ public sealed class ReleaseFoundationTests
         Assert.True(File.Exists(Path.Combine(assetsDirectory, "AppIcon.png")));
         Assert.True(File.Exists(Path.Combine(assetsDirectory, "AppIcon.svg")));
 
+        using var iconReader = new BinaryReader(File.OpenRead(Path.Combine(assetsDirectory, "AppIcon.ico")));
+        Assert.Equal((ushort)0, iconReader.ReadUInt16());
+        Assert.Equal((ushort)1, iconReader.ReadUInt16());
+        var iconFrameCount = iconReader.ReadUInt16();
+        Assert.Equal((ushort)7, iconFrameCount);
+
+        var iconSizes = new List<int>();
+        for (var frameIndex = 0; frameIndex < iconFrameCount; frameIndex++)
+        {
+            var size = iconReader.ReadByte();
+            iconSizes.Add(size == 0 ? 256 : size);
+            iconReader.BaseStream.Seek(15, SeekOrigin.Current);
+        }
+
+        Assert.Equal(new[] { 16, 24, 32, 48, 64, 128, 256 }, iconSizes);
+
         var projectContents = File.ReadAllText(projectFile);
         Assert.Contains("<ApplicationIcon>Assets\\AppIcon.ico</ApplicationIcon>", projectContents, StringComparison.Ordinal);
         Assert.Contains("<Content Include=\"Assets\\AppIcon.ico\">", projectContents, StringComparison.Ordinal);
